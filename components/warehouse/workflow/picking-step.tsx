@@ -256,52 +256,131 @@ export function PickingStep({ nodes }: PickingStepProps) {
         {selectedLevelId && partitions.length > 0 && (
           <div className="space-y-2 pl-2 border-l-2 border-green-200">
             <label className="text-xs font-medium text-foreground">
-              Partitions
+              Partitions - Select & Pick Product
             </label>
             <div className="space-y-2">
               {partitions.map((partition) => {
                 const isPicked = picks.some(
                   (p) => p.partitionId === partition.id
                 );
+                const availableQuantity = partition.maxCapacity - partition.usedCapacity;
+                const canPick = availableQuantity > 0 && remainingQuantity > 0 && !isPicked;
+                
                 return (
                   <div
                     key={partition.id}
-                    className={`border rounded-lg p-2 transition-colors ${
+                    className={`border rounded-lg p-3 transition-all ${
                       isPicked
-                        ? "border-green-500 bg-green-50"
-                        : "border-border bg-background"
+                        ? "border-green-500 bg-green-50 shadow-sm"
+                        : canPick
+                          ? "border-border bg-background hover:border-green-300 hover:bg-green-50/30"
+                          : "border-red-300 bg-red-50/20"
                     }`}
                   >
-                    <div className="text-xs font-medium mb-2">
-                      <span className="text-foreground">{partition.name}</span>
-                      <span className="text-muted-foreground ml-2">
-                        ({partition.usedCapacity}/{partition.maxCapacity})
-                      </span>
+                    {/* Partition Header */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <p className="text-xs font-semibold text-foreground">
+                          {partition.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Code: {partition.code}
+                        </p>
+                      </div>
+                      {isPicked && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-600 text-white">
+                          ✓ Picked
+                        </span>
+                      )}
+                      {!canPick && !isPicked && availableQuantity === 0 && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-600 text-white">
+                          Full
+                        </span>
+                      )}
                     </div>
-                    <div className="flex gap-2">
-                      <input
-                        type="number"
-                        min="0"
-                        max={remainingQuantity}
-                        value={pickQuantity}
-                        onChange={(e) => setPickQuantity(e.target.value)}
-                        placeholder="Qty"
-                        className="flex-1 px-2 py-1 text-xs border border-border rounded bg-background text-foreground"
-                      />
-                      <button
-                        onClick={() =>
-                          handleAddPick(partition.id, partition.name)
-                        }
-                        disabled={remainingQuantity === 0 || isPicked}
-                        className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
-                          remainingQuantity === 0 || isPicked
-                            ? "bg-muted text-muted-foreground cursor-not-allowed"
-                            : "bg-blue-600 text-white hover:bg-blue-700"
-                        }`}
-                      >
-                        <Plus size={14} />
-                      </button>
+
+                    {/* Capacity Info */}
+                    <div className="mb-3 space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Capacity</span>
+                        <span className="font-medium text-foreground">
+                          {partition.usedCapacity} / {partition.maxCapacity}
+                        </span>
+                      </div>
+                      <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full transition-all ${
+                            partition.usedCapacity / partition.maxCapacity > 0.8
+                              ? "bg-red-500"
+                              : partition.usedCapacity / partition.maxCapacity > 0.5
+                                ? "bg-amber-500"
+                                : "bg-green-500"
+                          }`}
+                          style={{
+                            width: `${(partition.usedCapacity / partition.maxCapacity) * 100}%`,
+                          }}
+                        />
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Available: {availableQuantity} units
+                      </div>
                     </div>
+
+                    {/* Pick Controls */}
+                    {!isPicked && canPick && (
+                      <div className="flex gap-2 items-end">
+                        <div className="flex-1">
+                          <label className="text-xs font-medium text-foreground block mb-1">
+                            Pick Quantity
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max={Math.min(remainingQuantity, availableQuantity)}
+                            value={pickQuantity}
+                            onChange={(e) => setPickQuantity(e.target.value)}
+                            placeholder="0"
+                            className="w-full px-2 py-1.5 text-xs border border-border rounded bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-green-500"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Max: {Math.min(remainingQuantity, availableQuantity)} {currentRequest.productUOM}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() =>
+                            handleAddPick(partition.id, partition.name)
+                          }
+                          className="px-3 py-1.5 text-xs font-medium rounded bg-green-600 text-white hover:bg-green-700 transition-colors h-fit"
+                        >
+                          <Plus size={16} />
+                        </button>
+                      </div>
+                    )}
+
+                    {isPicked && (
+                      <div className="flex gap-2 items-end">
+                        <div className="flex-1">
+                          <p className="text-xs font-medium text-foreground">Picked Quantity</p>
+                          <p className="text-sm font-semibold text-green-600 mt-1">
+                            {picks.find((p) => p.partitionId === partition.id)?.pickedQuantity} {currentRequest.productUOM}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => removePick(partition.id)}
+                          className="px-3 py-1.5 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700 transition-colors h-fit"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    )}
+
+                    {!canPick && !isPicked && (
+                      <div className="text-xs text-muted-foreground italic">
+                        {availableQuantity === 0 
+                          ? "Partition is at full capacity"
+                          : "No remaining quantity to pick"}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -312,29 +391,38 @@ export function PickingStep({ nodes }: PickingStepProps) {
 
       {/* Picked Items Summary */}
       {picks.length > 0 && (
-        <div className="border border-border rounded-lg p-3 bg-green-50">
-          <h4 className="text-xs font-semibold text-foreground mb-2">
-            Picked Items ({picks.length})
+        <div className="border border-green-300 rounded-lg p-3 bg-green-50">
+          <h4 className="text-xs font-semibold text-foreground mb-3 flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-600 text-white text-xs font-bold">
+              {picks.length}
+            </span>
+            Picked Locations
           </h4>
           <div className="space-y-2">
-            {picks.map((pick) => (
+            {picks.map((pick, index) => (
               <div
                 key={pick.partitionId}
-                className="flex items-center justify-between p-2 bg-white rounded border border-green-200"
+                className="flex items-center justify-between p-2.5 bg-white rounded border border-green-200 hover:border-green-400 transition-colors"
               >
-                <div className="text-xs">
-                  <p className="font-medium text-foreground">
-                    {pick.partitionName}
-                  </p>
-                  <p className="text-muted-foreground">
-                    {pick.pickedQuantity} {currentRequest.productUOM}
+                <div className="text-xs flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-600 text-white text-xs font-bold">
+                      {index + 1}
+                    </span>
+                    <p className="font-semibold text-foreground">
+                      {pick.partitionName}
+                    </p>
+                  </div>
+                  <p className="text-muted-foreground pl-7">
+                    Qty: <span className="font-medium text-green-600">{pick.pickedQuantity}</span> {currentRequest.productUOM}
                   </p>
                 </div>
                 <button
                   onClick={() => removePick(pick.partitionId)}
-                  className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                  className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                  title="Remove this pick"
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={16} />
                 </button>
               </div>
             ))}
