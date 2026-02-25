@@ -110,6 +110,10 @@ export function SidePanel({
 
   // Stock In mode state is now managed by workflow orchestrator - no local state needed
 
+  const toggleSection = (section: SidebarSection) => {
+    setOpenSection(openSection === section ? null : section);
+  };
+
   const isEditing =
     isEditingWarehouse ||
     (selectedNode && selectedNode.type !== "warehouse");
