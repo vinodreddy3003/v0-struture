@@ -3,6 +3,13 @@
 import { useStockInStore } from "@/store/stock-in-store";
 import { CheckCircle2, Package } from "lucide-react";
 import { useState } from "react";
+import { PartitionLevelVisualization } from "@/components/warehouse/panels/partition-level-visualization";
+import type { Partition } from "@/components/warehouse/types";
+
+interface PartitionAllocationDetail {
+  partition: Partition;
+  allocatedQuantity: number;
+}
 
 export function PutawayStep() {
   const {
@@ -19,6 +26,28 @@ export function PutawayStep() {
 
   const currentRequest = requests.find((r) => r.id === currentRequestId);
   if (!currentRequest) return null;
+
+  // Mock partition data - in a real app, this would come from the warehouse canvas/nodes
+  const partitionData: Record<string, Partition> = {
+    // This would be populated from actual warehouse data
+  };
+
+  const getPartitionDetails = (): PartitionAllocationDetail[] => {
+    return allocations.map((alloc) => ({
+      partition: {
+        id: alloc.partitionId,
+        name: alloc.partitionName,
+        code: `${alloc.partitionId.substring(0, 3).toUpperCase()}`,
+        width: 1,
+        max_capacity: 100,
+        used_capacity: 50,
+        product_name: currentRequest.productName,
+        product_type: currentRequest.productType,
+        product_uom: currentRequest.productUOM,
+      },
+      allocatedQuantity: alloc.allocatedQuantity,
+    }));
+  };
 
   const toggleConfirmed = (partitionId: string) => {
     const newSet = new Set(confirmedAllocations);
@@ -37,6 +66,8 @@ export function PutawayStep() {
   const handleConfirmAndComplete = () => {
     completeWorkflow();
   };
+
+  const partitionDetails = getPartitionDetails();
 
   return (
     <div className="space-y-4">
@@ -65,39 +96,47 @@ export function PutawayStep() {
         </div>
       </div>
 
-      {/* Putaway Checklist */}
+      {/* Partition Level Visualization */}
       <div className="space-y-2">
-        <label className="text-xs font-medium text-foreground">Confirm Placement</label>
-        <div className="border border-border rounded-lg divide-y">
-          {allocations.map((alloc) => (
+        <label className="text-xs font-medium text-foreground">Confirm Partition Placement</label>
+        <div className="border border-border rounded-lg p-3 space-y-3 max-h-96 overflow-y-auto bg-muted/10">
+          {partitionDetails.map((detail) => (
             <div
-              key={alloc.partitionId}
-              className="p-3 hover:bg-muted/30 transition-colors"
+              key={detail.partition.id}
+              className={`border-2 rounded-lg p-3 transition-all cursor-pointer ${
+                confirmedAllocations.has(detail.partition.id)
+                  ? "border-green-500 bg-green-50"
+                  : "border-border bg-background hover:bg-muted/50"
+              }`}
+              onClick={() => toggleConfirmed(detail.partition.id)}
             >
-              <button
-                onClick={() => toggleConfirmed(alloc.partitionId)}
-                className="w-full flex items-start gap-3 text-left"
-              >
+              <div className="flex items-start gap-3">
+                {/* Checkbox */}
                 <div
-                  className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                    confirmedAllocations.has(alloc.partitionId)
+                  className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors mt-1 ${
+                    confirmedAllocations.has(detail.partition.id)
                       ? "border-green-600 bg-green-50"
                       : "border-border bg-background"
                   }`}
                 >
-                  {confirmedAllocations.has(alloc.partitionId) && (
+                  {confirmedAllocations.has(detail.partition.id) && (
                     <CheckCircle2 size={16} className="text-green-600" />
                   )}
                 </div>
+
+                {/* Partition Visualization */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">
-                    {alloc.partitionName}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Placing {alloc.allocatedQuantity} units
-                  </p>
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-xs font-semibold text-foreground">
+                      Allocating {detail.allocatedQuantity} units
+                    </span>
+                  </div>
+                  <PartitionLevelVisualization
+                    partition={detail.partition}
+                    isAllocated={confirmedAllocations.has(detail.partition.id)}
+                  />
                 </div>
-              </button>
+              </div>
             </div>
           ))}
         </div>
@@ -106,26 +145,17 @@ export function PutawayStep() {
       {/* Instructions */}
       <div className="border-l-4 border-blue-500 bg-blue-50 p-3 rounded">
         <p className="text-xs text-blue-900">
-          Verify that all items have been physically placed in their allocated partitions
-          before proceeding to completion.
+          Click on each partition to confirm physical placement. Hover over partitions to see product name and remaining capacity.
         </p>
       </div>
 
-      {/* Progress Indicator */}
+      {/* Confirmation Counter */}
       <div className="bg-background border border-border rounded-lg p-3">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-foreground">Confirmation Progress</span>
           <span className="text-xs font-semibold text-foreground">
-            {confirmedAllocations.size} / {allocations.length}
+            {confirmedAllocations.size} / {allocations.length} partitions confirmed
           </span>
-        </div>
-        <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-          <div
-            className="h-full bg-green-600 transition-all"
-            style={{
-              width: `${(confirmedAllocations.size / allocations.length) * 100}%`,
-            }}
-          />
         </div>
       </div>
 

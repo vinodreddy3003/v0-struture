@@ -75,6 +75,11 @@ export function AllocationStep({ nodes }: AllocationStepProps) {
     );
 
     if (qty > 0) {
+      // Find the partition to get its data
+      const structure = structures.find(s => s.id === structureId);
+      const level = structure?.data?.levels?.find((l: any) => l.id === levelId);
+      const partition = level?.partitions?.find((p: any) => p.id === partitionId);
+
       addAllocation({
         structureId,
         levelId,
