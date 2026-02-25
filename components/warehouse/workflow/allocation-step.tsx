@@ -43,9 +43,9 @@ export function AllocationStep({ nodes }: AllocationStepProps) {
     ? nodes.filter(
         (n) =>
           n.type === "structure" &&
-          (n.data as StructureData).label === selectedZoneId
+          n.parentId === selectedZoneId
       )
-    : nodes.filter((n) => n.type === "structure");
+    : [];
 
   const toggleStructure = (id: string) => {
     const newSet = new Set(expandedStructures);
