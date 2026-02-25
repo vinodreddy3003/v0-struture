@@ -125,6 +125,8 @@ export function SidePanel({
     selectedAllocationStructureId,
     selectedAllocationPartitions,
     remainingQuantity,
+    requests,
+    addRequest,
   } = useStockInStore();
 
   // Get all structures from nodes for Stock In mode
@@ -627,8 +629,7 @@ export function SidePanel({
                 <div className="mt-2 space-y-2 p-2 bg-muted/30 rounded text-foreground">
                   <button
                     onClick={() => {
-                      // Add sample request for testing
-                      const newRequest: Partial<any> = {
+                      const newRequest = {
                         id: `req-${Date.now()}`,
                         date: new Date().toLocaleDateString(),
                         productName: "Sample Product",
@@ -637,10 +638,10 @@ export function SidePanel({
                         productUOM: "units",
                         quantity: 500,
                         vendor: "Test Vendor",
-                        status: "pending",
+                        status: "pending" as const,
                         allocations: [],
                       };
-                      // This would normally use useStockInStore.addRequest()
+                      addRequest(newRequest);
                     }}
                     className="w-full px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
                   >
