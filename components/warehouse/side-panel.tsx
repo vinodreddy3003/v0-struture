@@ -11,18 +11,15 @@ import {
   Download,
   Upload,
   Layers,
-  PackageIcon,
 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { WarehouseForm } from "./forms/warehouse-form";
 import { ZoneForm } from "./forms/zone-form";
 import { StructureForm } from "./forms/structure-form";
 import { PartitionForm } from "./forms/partition-form";
 import { NodeEditForm } from "./forms/node-edit-form";
 import { StockInForm } from "./forms/stock-in-form";
-import { StockInRequestsPanel } from "./panels/stock-in-requests-panel";
-import { StockInAssignmentFlow } from "./panels/stock-in-assignment-flow";
-import { PartitionSelector } from "./panels/partition-selector";
+import { StockInWorkflow } from "./workflow/stock-in-workflow";
 import type {
   WarehouseData,
   ElementData,
@@ -32,7 +29,6 @@ import type {
   StructureData,
   Partition,
 } from "./types";
-import { useStockInStore } from "@/store/stock-in-store";
 
 type SidebarSection = "elements" | "zones" | "structures" | "settings" | null;
 
@@ -112,72 +108,7 @@ export function SidePanel({
   const [showStructureForm, setShowStructureForm] = useState(false);
   const [selectedZoneForStructure, setSelectedZoneForStructure] = useState<string>("");
 
-  // Stock In mode state
-  const [expandedStructures, setExpandedStructures] = useState<Set<string>>(new Set());
-  const [expandedLevels, setExpandedLevels] = useState<Set<string>>(new Set());
-  const { 
-    selectedStructureId, 
-    selectedLevelId, 
-    selectedPartition: stockInSelectedPartition, 
-    selectPartition, 
-    clearSelection,
-    currentAssignmentStep,
-    selectedAllocationStructureId,
-    selectedAllocationPartitions,
-    remainingQuantity,
-    requests,
-    addRequest,
-  } = useStockInStore();
-
-  // Get all structures from nodes for Stock In mode
-  const structures = useMemo(
-    () => nodes.filter((n) => n.type === "structure") as Node<StructureData>[],
-    [nodes]
-  );
-
-  const toggleSection = (section: SidebarSection) => {
-    setOpenSection((prev) => (prev === section ? null : section));
-    setShowZoneForm(false);
-    setShowStructureForm(false);
-  };
-
-  const toggleStructure = (structureId: string) => {
-    const newSet = new Set(expandedStructures);
-    if (newSet.has(structureId)) {
-      newSet.delete(structureId);
-    } else {
-      newSet.add(structureId);
-    }
-    setExpandedStructures(newSet);
-  };
-
-  const toggleLevel = (levelId: string) => {
-    const newSet = new Set(expandedLevels);
-    if (newSet.has(levelId)) {
-      newSet.delete(levelId);
-    } else {
-      newSet.add(levelId);
-    }
-    setExpandedLevels(newSet);
-  };
-
-  const getCapacityStatus = (used: number, max: number) => {
-    const percentage = (used / max) * 100;
-    if (percentage < 40) return { label: "Low", color: "text-green-600 bg-green-50 border-green-200" };
-    if (percentage < 70) return { label: "Medium", color: "text-amber-600 bg-amber-50 border-amber-200" };
-    return { label: "High", color: "text-red-600 bg-red-50 border-red-200" };
-  };
-
-  const handlePartitionClick = (partition: Partition, structureId: string, levelId: string) => {
-    selectPartition(structureId, levelId, partition);
-  };
-
-  const handleUpdatePartition = (partition: Partition) => {
-    if (selectedStructureId && selectedLevelId) {
-      onPartitionUpdate(selectedStructureId, selectedLevelId, partition);
-      clearSelection();
-    }
-  };
+  // Stock In mode state is now managed by workflow orchestrator - no local state needed
 
   const isEditing =
     isEditingWarehouse ||
@@ -588,68 +519,15 @@ export function SidePanel({
 
         {/* STOCK IN MODE */}
         {mode === "stock-in" && (
-          <div className="p-4 space-y-3">
-            {/* Workflow based on current step */}
-            {currentAssignmentStep === "request-list" ? (
-              <div className="space-y-2">
-                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <PackageIcon size={16} />
-                  Stock In Requests
-                </h3>
-                <StockInRequestsPanel onAssignmentStart={() => {}} />
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <PackageIcon size={16} />
-                  Allocating Stock
-                </h3>
-                <StockInAssignmentFlow nodes={nodes || []} zoneNodes={zones} />
-                
-                {/* Partition Selector for partition-select step */}
-                {currentAssignmentStep === "partition-select" && selectedAllocationStructureId && (
-                  <div className="space-y-2 border-t border-border pt-3">
-                    <h4 className="text-xs font-semibold text-foreground">Available Partitions</h4>
-                    <PartitionSelector
-                      structureId={selectedAllocationStructureId}
-                      nodes={nodes || []}
-                      remainingQuantity={remainingQuantity}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Test Data Section - for demo purposes */}
-            <div className="border-t border-border pt-3 mt-3">
-              <details className="text-xs">
-                <summary className="font-medium text-foreground cursor-pointer hover:text-blue-600">
-                  Create Test Request
-                </summary>
-                <div className="mt-2 space-y-2 p-2 bg-muted/30 rounded text-foreground">
-                  <button
-                    onClick={() => {
-                      const newRequest = {
-                        id: `req-${Date.now()}`,
-                        date: new Date().toLocaleDateString(),
-                        productName: "Sample Product",
-                        productType: "Electronics",
-                        productValue: 100,
-                        productUOM: "units",
-                        quantity: 500,
-                        vendor: "Test Vendor",
-                        status: "pending" as const,
-                        allocations: [],
-                      };
-                      addRequest(newRequest);
-                    }}
-                    className="w-full px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
-                  >
-                    + Add Sample Request
-                  </button>
-                </div>
-              </details>
-            </div>
+          <div className="p-4">
+            <StockInWorkflow 
+              nodes={nodes || []}
+              onAddRequest={() => {}}
+              onWorkflowComplete={(callback) => {
+                // Called when workflow completes to update partitions
+                // The callback will be used to update warehouse canvas
+              }}
+            />
           </div>
         )}
       </div>
