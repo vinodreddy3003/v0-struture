@@ -40,7 +40,7 @@ export function PutawayStep() {
         code: `${alloc.partitionId.substring(0, 3).toUpperCase()}`,
         width: 1,
         max_capacity: 100,
-        used_capacity: 50,
+        used_capacity: alloc.allocatedQuantity,
         product_name: currentRequest.productName,
         product_type: currentRequest.productType,
         product_uom: currentRequest.productUOM,
@@ -76,7 +76,7 @@ export function PutawayStep() {
             code: `${alloc.partitionId.substring(0, 3).toUpperCase()}`,
             width: 1,
             max_capacity: 100,
-            used_capacity: 50 + alloc.allocatedQuantity, // Simulate capacity update
+            used_capacity: alloc.allocatedQuantity,
             product_name: currentRequest.productName,
             product_type: currentRequest.productType,
             product_uom: currentRequest.productUOM,
