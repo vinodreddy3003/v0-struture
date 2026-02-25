@@ -64,6 +64,28 @@ export function PutawayStep() {
   );
 
   const handleConfirmAndComplete = () => {
+    // Dispatch partition updates to warehouse canvas to visually update the structure
+    allocations.forEach((alloc) => {
+      const event = new CustomEvent("partition-updated", {
+        detail: {
+          structureId: alloc.structureId,
+          levelId: alloc.levelId,
+          partition: {
+            id: alloc.partitionId,
+            name: alloc.partitionName,
+            code: `${alloc.partitionId.substring(0, 3).toUpperCase()}`,
+            width: 1,
+            max_capacity: 100,
+            used_capacity: 50 + alloc.allocatedQuantity, // Simulate capacity update
+            product_name: currentRequest.productName,
+            product_type: currentRequest.productType,
+            product_uom: currentRequest.productUOM,
+          },
+        },
+      });
+      window.dispatchEvent(event);
+    });
+
     completeWorkflow();
   };
 

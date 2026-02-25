@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useState } from "react";
 import {
   type NodeProps,
   NodeResizer,
@@ -15,6 +15,8 @@ type StructureNodeProps = NodeProps<Node<StructureData>>;
 
 function StructureNodeComponent({ id, data, selected }: StructureNodeProps) {
   const { levels } = data;
+  const [hoveredPartitionId, setHoveredPartitionId] = useState<string | null>(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
   const getCapacityColor = (fillPercentage: number): string => {
     if (fillPercentage < 40) return "#10b981"; // green
@@ -32,6 +34,16 @@ function StructureNodeComponent({ id, data, selected }: StructureNodeProps) {
       },
     });
     window.dispatchEvent(event);
+  };
+
+  const handlePartitionMouseEnter = (e: React.MouseEvent, partition: Partition) => {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    setTooltipPos({ x: rect.left, y: rect.top });
+    setHoveredPartitionId(partition.id);
+  };
+
+  const handlePartitionMouseLeave = () => {
+    setHoveredPartitionId(null);
   };
 
   return (
@@ -101,35 +113,59 @@ function StructureNodeComponent({ id, data, selected }: StructureNodeProps) {
               {level.partitions.slice(0, 8).map((partition) => {
                 const fillPercentage = (partition.used_capacity / partition.max_capacity) * 100;
                 const fillHeight = Math.round((fillPercentage / 100) * 100);
+                const remainingCapacity = partition.max_capacity - partition.used_capacity;
+                const isHovered = hoveredPartitionId === partition.id;
 
                 return (
-                  <button
-                    key={partition.id}
-                    onClick={() => handlePartitionClick(partition, level.id)}
-                    className="relative flex flex-1 items-end rounded-sm border border-solid overflow-hidden cursor-pointer transition-all hover:border-blue-400 hover:shadow-md"
-                    style={{
-                      borderColor: "rgba(0,0,0,0.2)",
-                      backgroundColor: "rgba(255,255,255,0.3)",
-                    }}
-                    title={`Click to edit: ${partition.name}: ${partition.used_capacity}/${partition.max_capacity}`}
-                  >
-                    {/* Capacity fill indicator - fills from bottom */}
-                    <div
+                  <div key={partition.id} className="relative flex-1">
+                    <button
+                      onClick={() => handlePartitionClick(partition, level.id)}
+                      onMouseEnter={(e) => handlePartitionMouseEnter(e, partition)}
+                      onMouseLeave={handlePartitionMouseLeave}
+                      className="relative flex flex-1 items-end rounded-sm border border-solid overflow-hidden cursor-pointer transition-all hover:border-blue-400 hover:shadow-md h-full w-full"
                       style={{
-                        width: "100%",
-                        height: `${fillHeight}%`,
-                        backgroundColor: getCapacityColor(fillPercentage),
-                        opacity: 0.7,
-                        transition: "all 0.2s ease-out",
+                        borderColor: "rgba(0,0,0,0.2)",
+                        backgroundColor: "rgba(255,255,255,0.3)",
                       }}
-                    />
-                    {/* Partition label */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-[6px] font-medium text-foreground drop-shadow-sm pointer-events-none">
-                        {partition.code}
-                      </span>
-                    </div>
-                  </button>
+                      title={`${partition.name}: ${partition.used_capacity}/${partition.max_capacity}`}
+                    >
+                      {/* Capacity fill indicator - fills from bottom */}
+                      <div
+                        style={{
+                          width: "100%",
+                          height: `${fillHeight}%`,
+                          backgroundColor: getCapacityColor(fillPercentage),
+                          opacity: 0.7,
+                          transition: "all 0.2s ease-out",
+                        }}
+                      />
+                      {/* Partition label */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-[6px] font-medium text-foreground drop-shadow-sm pointer-events-none">
+                          {partition.code}
+                        </span>
+                      </div>
+                    </button>
+                    {/* Tooltip */}
+                    {isHovered && (
+                      <div
+                        className="fixed z-50 pointer-events-none bg-slate-900 text-white text-[11px] rounded-md px-2 py-1.5 shadow-lg border border-slate-700 whitespace-nowrap"
+                        style={{
+                          left: `${tooltipPos.x}px`,
+                          top: `${tooltipPos.y - 40}px`,
+                          transform: "translateX(-50%)",
+                        }}
+                      >
+                        <div className="font-semibold">{partition.name}</div>
+                        {partition.product_name && (
+                          <div className="text-[10px] opacity-90">{partition.product_name}</div>
+                        )}
+                        <div className="text-[10px] opacity-80">
+                          Remaining: {remainingCapacity} / {partition.max_capacity}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
