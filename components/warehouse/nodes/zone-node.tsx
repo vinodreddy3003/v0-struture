@@ -10,11 +10,14 @@ import {
 import type { Node } from "@xyflow/react";
 import { Copy, Trash2, Pencil, Thermometer } from "lucide-react";
 import { ZONE_LABELS, type ZoneData } from "../types";
+import { useStockInStore } from "@/store/stock-in-store";
 
 type ZoneNodeProps = NodeProps<Node<ZoneData>>;
 
 function ZoneNodeComponent({ id, data, selected }: ZoneNodeProps) {
   const isColdStorage = data.zoneType === "cold-storage";
+  const { highlightedZoneId } = useStockInStore();
+  const isHighlighted = highlightedZoneId === id;
 
   return (
     <>
@@ -62,10 +65,20 @@ function ZoneNodeComponent({ id, data, selected }: ZoneNodeProps) {
         </button>
       </NodeToolbar>
       <div
-        className="flex h-full w-full flex-col overflow-hidden rounded-md border-2 border-dashed"
+        className={`flex h-full w-full flex-col overflow-hidden rounded-md border-2 transition-all ${
+          isHighlighted
+            ? "border-blue-500 shadow-lg shadow-blue-400"
+            : selected
+              ? "border-blue-600"
+              : "border-dashed"
+        }`}
         style={{
-          backgroundColor: data.color,
-          borderColor: selected ? "#2563EB" : "rgba(0,0,0,0.12)",
+          backgroundColor: isHighlighted 
+            ? data.color 
+            : data.color,
+          borderColor: isHighlighted ? "#3b82f6" : selected ? "#2563EB" : "rgba(0,0,0,0.12)",
+          opacity: isHighlighted ? 1 : selected ? 1 : 0.8,
+          boxShadow: isHighlighted ? "0 0 20px rgba(59, 130, 246, 0.5)" : undefined,
         }}
       >
         <div className="flex items-center justify-between border-b px-2 py-1" style={{ borderColor: "rgba(0,0,0,0.08)" }}>

@@ -116,3 +116,27 @@ export const STRUCTURE_COLORS: Record<StructureType, string> = {
 };
 
 export const GRID_SIZE = 10;
+
+// Stock In Workflow Types
+export type StockInRequestStatus = "pending" | "approved" | "rejected" | "in-progress" | "completed";
+
+export interface AllocationDetail {
+  structureId: string;
+  levelId: string;
+  partitionId: string;
+  allocatedQuantity: number;
+}
+
+export interface StockInRequest {
+  id: string;
+  date: string;
+  productName: string;
+  productType: string;
+  productValue: number;
+  productUOM: string;
+  quantity: number;
+  vendor: string;
+  status: StockInRequestStatus;
+  allocations: AllocationDetail[];
+  notes?: string;
+}
