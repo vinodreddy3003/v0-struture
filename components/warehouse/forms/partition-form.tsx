@@ -105,9 +105,9 @@ export function PartitionForm({
           <input
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground outline-none focus:ring-2 focus:ring-ring"
-            required
+            readOnly
+            className="rounded-md border border-input bg-muted/50 px-2 py-1 text-xs text-foreground outline-none cursor-not-allowed"
+            title="Partition name cannot be changed"
           />
         </div>
         <div className="flex flex-col gap-1.5">
@@ -115,9 +115,9 @@ export function PartitionForm({
           <input
             type="text"
             value={code}
-            onChange={(e) => setCode(e.target.value)}
-            className="rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground outline-none focus:ring-2 focus:ring-ring"
-            required
+            readOnly
+            className="rounded-md border border-input bg-muted/50 px-2 py-1 text-xs text-foreground outline-none cursor-not-allowed"
+            title="Partition code cannot be changed"
           />
         </div>
       </div>

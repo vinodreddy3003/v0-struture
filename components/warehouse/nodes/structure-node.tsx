@@ -38,7 +38,14 @@ function StructureNodeComponent({ id, data, selected }: StructureNodeProps) {
 
   const handlePartitionMouseEnter = (e: React.MouseEvent, partition: Partition) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    setTooltipPos({ x: rect.left, y: rect.top });
+    const container = (e.currentTarget as HTMLElement).closest('[data-reactflow-container]') || 
+                      (e.currentTarget as HTMLElement).closest('.react-flow__renderer');
+    const containerRect = container?.getBoundingClientRect();
+    
+    const x = containerRect ? rect.left - (containerRect.left - rect.width) : rect.left;
+    const y = containerRect ? rect.top - (containerRect.top + 20) : rect.top;
+    
+    setTooltipPos({ x: rect.left + rect.width / 2, y: rect.top - 35 });
     setHoveredPartitionId(partition.id);
   };
 
