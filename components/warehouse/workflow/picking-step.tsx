@@ -50,29 +50,34 @@ export function PickingStep({ nodes }: PickingStepProps) {
 
   // Generate mock partitions and levels for the selected zone
   const getPartitionsAndLevelsForZone = (zoneId: string): PartitionWithLevel[] => {
+    // Find all structures that belong to this zone
     const structures = nodes.filter(
       (n) => n.type === "structure" && n.parentNode === zoneId
     );
 
     const items: PartitionWithLevel[] = [];
     
-    structures.forEach((structure, structIndex) => {
-      // Generate 3 levels per structure
-      for (let levelIndex = 1; levelIndex <= 3; levelIndex++) {
-        const levelId = `level-${levelIndex}-${structure.id}`;
-        const levelName = `Level ${levelIndex}`;
-        
-        // Generate 3 partitions per level
-        for (let partIndex = 1; partIndex <= 3; partIndex++) {
-          items.push({
-            partitionId: `part-${partIndex}-${levelId}`,
-            partitionName: `${String.fromCharCode(64 + partIndex)}`,
-            levelId,
-            levelName,
-            usedCapacity: Math.floor(Math.random() * 80),
-            maxCapacity: 100,
-          });
-        }
+    // Extract real partition data from each structure's data
+    structures.forEach((structureNode) => {
+      const structData = structureNode.data as any;
+      
+      // Check if structure has levels data
+      if (structData?.levels && Array.isArray(structData.levels)) {
+        structData.levels.forEach((level: any) => {
+          // Each level should have partitions
+          if (level.partitions && Array.isArray(level.partitions)) {
+            level.partitions.forEach((partition: any) => {
+              items.push({
+                partitionId: partition.id,
+                partitionName: partition.name || partition.code || "Unknown",
+                levelId: level.id,
+                levelName: level.name || `Level ${level.code}`,
+                usedCapacity: partition.used_capacity || 0,
+                maxCapacity: partition.max_capacity || 100,
+              });
+            });
+          }
+        });
       }
     });
 
@@ -82,6 +87,11 @@ export function PickingStep({ nodes }: PickingStepProps) {
   const partitionsAndLevels = selectedZoneId 
     ? getPartitionsAndLevelsForZone(selectedZoneId)
     : [];
+
+  // Helper function to get partition count for any zone
+  const getZoneLocationCount = (zoneId: string): number => {
+    return getPartitionsAndLevelsForZone(zoneId).length;
+  };
 
   // Group partitions by level for display
   const partitionsByLevel = partitionsAndLevels.reduce(
@@ -192,9 +202,7 @@ export function PickingStep({ nodes }: PickingStepProps) {
                 {zone.data?.label || zone.id}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                {partitionsAndLevels.filter(
-                  (p) => selectedZoneId === zone.id
-                ).length} locations
+                {getZoneLocationCount(zone.id)} locations
               </p>
             </button>
           ))}
