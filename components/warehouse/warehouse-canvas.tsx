@@ -14,13 +14,15 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { nanoid } from "nanoid";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Package } from "lucide-react";
 
 import { WarehouseNode } from "./nodes/warehouse-node";
 import { ElementNode } from "./nodes/element-node";
 import { ZoneNode } from "./nodes/zone-node";
 import { StructureNode } from "./nodes/structure-node";
 import { SidePanel } from "./side-panel";
+import { StockInPanel } from "./stock-in-panel";
+import { useStockInStore, type AppMode } from "@/store/stock-in-store";
 
 import {
   GRID_SIZE,
@@ -49,6 +51,8 @@ export function WarehouseCanvas() {
   const [isEditingWarehouse, setIsEditingWarehouse] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedPartition, setSelectedPartition] = useState<{ partition: Record<string, unknown>; structureId: string; levelId: string } | null>(null);
+  const [stockInPanelOpen, setStockInPanelOpen] = useState(false);
+  const { mode, setMode } = useStockInStore();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
   const warehouseNode = useMemo(
@@ -177,6 +181,74 @@ export function WarehouseCanvas() {
   );
 
 
+
+  // Handle partition updates from Stock In mode
+  const handlePartitionUpdate = useCallback(
+    (structureId: string, levelId: string, partition: Record<string, unknown>) => {
+      setNodes((prevNodes) =>
+        prevNodes.map((node) => {
+          if (node.id === structureId && node.type === "structure") {
+            const data = { ...node.data };
+            const levelIndex = data.levels.findIndex((l) => l.id === levelId);
+            if (levelIndex !== -1) {
+              const updatedLevel = { ...data.levels[levelIndex] };
+              const partitionIndex = updatedLevel.partitions.findIndex(
+                (p) => p.id === (partition.id as string)
+              );
+              if (partitionIndex !== -1) {
+                updatedLevel.partitions[partitionIndex] = partition;
+                const updatedLevels = [...data.levels];
+                updatedLevels[levelIndex] = updatedLevel;
+
+                // Recalculate structure capacity
+                const totalCapacity = updatedLevels.reduce(
+                  (sum, level) =>
+                    sum +
+                    level.partitions.reduce(
+                      (partSum, part) => partSum + part.max_capacity,
+                      0
+                    ),
+                  0
+                );
+                const usedCapacity = updatedLevels.reduce(
+                  (sum, level) =>
+                    sum +
+                    level.partitions.reduce(
+                      (partSum, part) => partSum + part.used_capacity,
+                      0
+                    ),
+                  0
+                );
+
+                return {
+                  ...node,
+                  data: {
+                    ...data,
+                    levels: updatedLevels,
+                    max_capacity: totalCapacity,
+                    used_capacity: usedCapacity,
+                  },
+                };
+              }
+            }
+          }
+          return node;
+        })
+      );
+    },
+    [setNodes]
+  );
+
+  const handleModeSwitch = (newMode: AppMode) => {
+    setMode(newMode);
+    if (newMode === "stock-in") {
+      setStockInPanelOpen(true);
+      setSelectedNodeId(null);
+      setIsEditingWarehouse(false);
+    } else {
+      setStockInPanelOpen(false);
+    }
+  };
 
   // Update any node's data
   const handleUpdateNode = useCallback(
@@ -439,37 +511,84 @@ export function WarehouseCanvas() {
 
   return (
     <div className="flex h-screen w-full bg-background">
-      <SidePanel
-        isOpen={sidebarOpen}
-        warehouseExists={warehouseExists}
-        warehouseData={warehouseData}
-        selectedNode={selectedNode}
-        isEditingWarehouse={isEditingWarehouse}
-        selectedPartition={selectedPartition}
-        onSelectPartition={setSelectedPartition}
-        onCreateWarehouse={handleCreateWarehouse}
-        onUpdateNode={handleUpdateNode}
-        onAddElement={handleAddElement}
-        onAddZone={handleAddZone}
-        onAddStructure={handleAddStructure}
-        onCloseEdit={handleCloseEdit}
-        onExportJSON={handleExportJSON}
-        onImportJSON={handleImportJSON}
-        zones={zones}
+      {/* Side Panels - Design or Stock In */}
+      {mode === "design" ? (
+        <SidePanel
+          isOpen={sidebarOpen}
+          warehouseExists={warehouseExists}
+          warehouseData={warehouseData}
+          selectedNode={selectedNode}
+          isEditingWarehouse={isEditingWarehouse}
+          selectedPartition={selectedPartition}
+          onSelectPartition={setSelectedPartition}
+          onCreateWarehouse={handleCreateWarehouse}
+          onUpdateNode={handleUpdateNode}
+          onAddElement={handleAddElement}
+          onAddZone={handleAddZone}
+          onAddStructure={handleAddStructure}
+          onCloseEdit={handleCloseEdit}
+          onExportJSON={handleExportJSON}
+          onImportJSON={handleImportJSON}
+          zones={zones}
+        />
+      ) : null}
+      
+      <StockInPanel
+        isOpen={stockInPanelOpen && mode === "stock-in"}
+        nodes={nodes}
+        onPartitionUpdate={handlePartitionUpdate}
+        onClose={() => handleModeSwitch("design")}
       />
+
       <div className="relative flex-1" ref={reactFlowWrapper}>
-        {/* Hamburger toggle */}
-        <button
-          onClick={() => setSidebarOpen((v) => !v)}
-          className="absolute left-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card shadow-sm transition-colors hover:bg-accent"
-          aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
-        >
-          {sidebarOpen ? (
-            <X size={18} className="text-foreground" />
-          ) : (
-            <Menu size={18} className="text-foreground" />
-          )}
-        </button>
+        {/* Mode Toggle and Hamburger */}
+        <div className="absolute left-3 top-3 z-10 flex gap-2">
+          {/* Hamburger toggle */}
+          <button
+            onClick={() => setSidebarOpen((v) => !v)}
+            className={`flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card shadow-sm transition-colors hover:bg-accent ${
+              !sidebarOpen || mode !== "design" ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+            aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+            disabled={mode !== "design"}
+          >
+            {sidebarOpen && mode === "design" ? (
+              <X size={18} className="text-foreground" />
+            ) : (
+              <Menu size={18} className="text-foreground" />
+            )}
+          </button>
+
+          {/* Mode Switcher */}
+          <div className="flex gap-1 bg-card border border-border rounded-md p-1 shadow-sm">
+            <button
+              onClick={() => handleModeSwitch("design")}
+              className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                mode === "design"
+                  ? "bg-blue-600 text-white"
+                  : "text-muted-foreground hover:bg-muted"
+              }`}
+              title="Design Mode - Create warehouse layout"
+            >
+              Design
+            </button>
+            <button
+              onClick={() => handleModeSwitch("stock-in")}
+              disabled={!warehouseExists}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                mode === "stock-in"
+                  ? "bg-emerald-600 text-white"
+                  : warehouseExists
+                    ? "text-muted-foreground hover:bg-muted"
+                    : "opacity-50 cursor-not-allowed text-muted-foreground"
+              }`}
+              title={warehouseExists ? "Stock In Mode - Update partition inventory" : "Create warehouse first"}
+            >
+              <Package size={14} />
+              Stock In
+            </button>
+          </div>
+        </div>
 
         <ReactFlow
           nodes={nodes}
