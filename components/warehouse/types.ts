@@ -140,3 +140,30 @@ export interface StockInRequest {
   allocations: AllocationDetail[];
   notes?: string;
 }
+
+// Stock Out Workflow Types
+export type StockOutRequestStatus = "pending" | "approved" | "rejected" | "in-progress" | "picked" | "completed";
+
+export interface PickDetail {
+  structureId: string;
+  levelId: string;
+  partitionId: string;
+  partitionName: string;
+  pickedQuantity: number;
+  partitionUsedCapacity?: number;
+  partitionMaxCapacity?: number;
+}
+
+export interface StockOutRequest {
+  id: string;
+  date: string;
+  productName: string;
+  productType: string;
+  productValue: number;
+  productUOM: string;
+  quantity: number;
+  customer: string;
+  status: StockOutRequestStatus;
+  picks: PickDetail[];
+  notes?: string;
+}
