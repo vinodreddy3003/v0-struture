@@ -52,6 +52,7 @@ export function WarehouseForm({
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+          suppressHydrationWarning
           required
         />
       </div>
@@ -67,6 +68,7 @@ export function WarehouseForm({
             min={200}
             max={2000}
             className="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+            suppressHydrationWarning
             required
           />
         </div>
@@ -81,6 +83,7 @@ export function WarehouseForm({
             min={200}
             max={2000}
             className="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+            suppressHydrationWarning
             required
           />
         </div>
@@ -94,6 +97,7 @@ export function WarehouseForm({
             onChange={(e) => setLength(Number(e.target.value))}
             min={1}
             className="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+            suppressHydrationWarning
             required
           />
         </div>

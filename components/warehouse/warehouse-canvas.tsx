@@ -53,24 +53,6 @@ export function WarehouseCanvas() {
   const { mode, setMode } = useStockInStore();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
-  // Suppress hydration mismatch warnings caused by browser extensions
-  useEffect(() => {
-    const originalError = console.error;
-    console.error = (...args: unknown[]) => {
-      if (
-        typeof args[0] === "string" &&
-        (args[0] as string).includes("Hydration failed")
-      ) {
-        return;
-      }
-      originalError(...args);
-    };
-
-    return () => {
-      console.error = originalError;
-    };
-  }, []);
-
   const warehouseNode = useMemo(
     () => nodes.find((n) => n.type === "warehouse"),
     [nodes]

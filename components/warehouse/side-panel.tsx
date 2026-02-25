@@ -11,6 +11,7 @@ import {
   Download,
   Upload,
   Layers,
+  Package,
 } from "lucide-react";
 import { useState } from "react";
 import { WarehouseForm } from "./forms/warehouse-form";
@@ -130,7 +131,7 @@ export function SidePanel({
     >
       <div className="flex items-center gap-2 border-b border-border px-4 py-3">
         {mode === "stock-in" ? (
-          <PackageIcon size={18} className="text-emerald-600" />
+          <Package size={18} className="text-emerald-600" />
         ) : (
           <Warehouse size={18} className="text-primary" />
         )}
