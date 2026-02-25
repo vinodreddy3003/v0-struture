@@ -21,7 +21,6 @@ import { ElementNode } from "./nodes/element-node";
 import { ZoneNode } from "./nodes/zone-node";
 import { StructureNode } from "./nodes/structure-node";
 import { SidePanel } from "./side-panel";
-import { StockInPanel } from "./stock-in-panel";
 import { useStockInStore, type AppMode } from "@/store/stock-in-store";
 
 import {
@@ -51,7 +50,6 @@ export function WarehouseCanvas() {
   const [isEditingWarehouse, setIsEditingWarehouse] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedPartition, setSelectedPartition] = useState<{ partition: Record<string, unknown>; structureId: string; levelId: string } | null>(null);
-  const [stockInPanelOpen, setStockInPanelOpen] = useState(false);
   const { mode, setMode } = useStockInStore();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
@@ -241,12 +239,9 @@ export function WarehouseCanvas() {
 
   const handleModeSwitch = (newMode: AppMode) => {
     setMode(newMode);
-    if (newMode === "stock-in") {
-      setStockInPanelOpen(true);
+    if (newMode === "design") {
       setSelectedNodeId(null);
       setIsEditingWarehouse(false);
-    } else {
-      setStockInPanelOpen(false);
     }
   };
 
@@ -511,33 +506,27 @@ export function WarehouseCanvas() {
 
   return (
     <div className="flex h-screen w-full bg-background">
-      {/* Side Panels - Design or Stock In */}
-      {mode === "design" ? (
-        <SidePanel
-          isOpen={sidebarOpen}
-          warehouseExists={warehouseExists}
-          warehouseData={warehouseData}
-          selectedNode={selectedNode}
-          isEditingWarehouse={isEditingWarehouse}
-          selectedPartition={selectedPartition}
-          onSelectPartition={setSelectedPartition}
-          onCreateWarehouse={handleCreateWarehouse}
-          onUpdateNode={handleUpdateNode}
-          onAddElement={handleAddElement}
-          onAddZone={handleAddZone}
-          onAddStructure={handleAddStructure}
-          onCloseEdit={handleCloseEdit}
-          onExportJSON={handleExportJSON}
-          onImportJSON={handleImportJSON}
-          zones={zones}
-        />
-      ) : null}
-      
-      <StockInPanel
-        isOpen={stockInPanelOpen && mode === "stock-in"}
+      {/* Unified SidePanel - switches behavior based on mode */}
+      <SidePanel
+        isOpen={sidebarOpen}
+        mode={mode}
+        warehouseExists={warehouseExists}
+        warehouseData={warehouseData}
+        selectedNode={selectedNode}
+        isEditingWarehouse={isEditingWarehouse}
+        selectedPartition={selectedPartition}
+        onSelectPartition={setSelectedPartition}
+        onCreateWarehouse={handleCreateWarehouse}
+        onUpdateNode={handleUpdateNode}
+        onAddElement={handleAddElement}
+        onAddZone={handleAddZone}
+        onAddStructure={handleAddStructure}
+        onCloseEdit={handleCloseEdit}
+        onExportJSON={handleExportJSON}
+        onImportJSON={handleImportJSON}
+        zones={zones}
         nodes={nodes}
         onPartitionUpdate={handlePartitionUpdate}
-        onClose={() => handleModeSwitch("design")}
       />
 
       <div className="relative flex-1" ref={reactFlowWrapper}>
