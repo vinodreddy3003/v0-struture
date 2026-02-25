@@ -1,12 +1,21 @@
 "use client";
 
 import { useStockOutStore } from "@/store/stock-out-store";
-import { ChevronDown, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import type { Node } from "@xyflow/react";
 
 interface PickingStepProps {
   nodes: Node[];
+}
+
+interface PartitionWithLevel {
+  partitionId: string;
+  partitionName: string;
+  levelId: string;
+  levelName: string;
+  usedCapacity: number;
+  maxCapacity: number;
 }
 
 export function PickingStep({ nodes }: PickingStepProps) {
@@ -16,19 +25,13 @@ export function PickingStep({ nodes }: PickingStepProps) {
     picks,
     remainingQuantity,
     selectedZoneId,
-    selectedStructureId,
-    selectedLevelId,
     selectZone,
-    selectStructure,
-    selectLevel,
     addPick,
     removePick,
-    setCurrentStep,
   } = useStockOutStore();
 
-  const [expandedZone, setExpandedZone] = useState<string | null>(null);
-  const [expandedStructure, setExpandedStructure] = useState<string | null>(null);
   const [pickQuantity, setPickQuantity] = useState("0");
+  const [selectedPartitionLevelId, setSelectedPartitionLevelId] = useState<string | null>(null);
 
   const currentRequest = requests.find((r) => r.id === currentRequestId);
   if (!currentRequest) return null;
@@ -36,8 +39,8 @@ export function PickingStep({ nodes }: PickingStepProps) {
   // Get zones from nodes
   const zones = nodes.filter((n) => n.type === "zone");
 
-  // Get structures for selected zone
-  const structures = selectedZoneId
+  // Get all structures in selected zone
+  const structuresInZone = selectedZoneId
     ? nodes.filter(
         (n) =>
           n.type === "structure" &&
@@ -45,55 +48,62 @@ export function PickingStep({ nodes }: PickingStepProps) {
       )
     : [];
 
-  // Get levels for selected structure (mock - in real app from warehouse data)
-  const levels = selectedStructureId
-    ? [
-        {
-          id: `level-1-${selectedStructureId}`,
-          name: "Level 1",
-          code: "L1",
-        },
-        {
-          id: `level-2-${selectedStructureId}`,
-          name: "Level 2",
-          code: "L2",
-        },
-        {
-          id: `level-3-${selectedStructureId}`,
-          name: "Level 3",
-          code: "L3",
-        },
-      ]
+  // Generate mock partitions and levels for the selected zone
+  const getPartitionsAndLevelsForZone = (zoneId: string): PartitionWithLevel[] => {
+    const structures = nodes.filter(
+      (n) => n.type === "structure" && n.parentNode === zoneId
+    );
+
+    const items: PartitionWithLevel[] = [];
+    
+    structures.forEach((structure, structIndex) => {
+      // Generate 3 levels per structure
+      for (let levelIndex = 1; levelIndex <= 3; levelIndex++) {
+        const levelId = `level-${levelIndex}-${structure.id}`;
+        const levelName = `Level ${levelIndex}`;
+        
+        // Generate 3 partitions per level
+        for (let partIndex = 1; partIndex <= 3; partIndex++) {
+          items.push({
+            partitionId: `part-${partIndex}-${levelId}`,
+            partitionName: `${String.fromCharCode(64 + partIndex)}`,
+            levelId,
+            levelName,
+            usedCapacity: Math.floor(Math.random() * 80),
+            maxCapacity: 100,
+          });
+        }
+      }
+    });
+
+    return items;
+  };
+
+  const partitionsAndLevels = selectedZoneId 
+    ? getPartitionsAndLevelsForZone(selectedZoneId)
     : [];
 
-  // Get partitions for selected level (mock - in real app from warehouse data)
-  const partitions = selectedLevelId
-    ? [
-        {
-          id: `part-1-${selectedLevelId}`,
-          name: `Partition A`,
-          code: "PA",
-          usedCapacity: 45,
-          maxCapacity: 100,
-        },
-        {
-          id: `part-2-${selectedLevelId}`,
-          name: `Partition B`,
-          code: "PB",
-          usedCapacity: 78,
-          maxCapacity: 100,
-        },
-        {
-          id: `part-3-${selectedLevelId}`,
-          name: `Partition C`,
-          code: "PC",
-          usedCapacity: 32,
-          maxCapacity: 100,
-        },
-      ]
-    : [];
+  // Group partitions by level for display
+  const partitionsByLevel = partitionsAndLevels.reduce(
+    (acc, item) => {
+      if (!acc[item.levelId]) {
+        acc[item.levelId] = {
+          levelName: item.levelName,
+          partitions: [],
+        };
+      }
+      acc[item.levelId].partitions.push(item);
+      return acc;
+    },
+    {} as Record<string, { levelName: string; partitions: PartitionWithLevel[] }>
+  );
 
-  const handleAddPick = (partitionId: string, partitionName: string) => {
+  const handleAddPick = (
+    partitionId: string,
+    partitionName: string,
+    levelId: string,
+    levelName: string
+  ) => {
     const quantity = parseInt(pickQuantity, 10);
     if (isNaN(quantity) || quantity <= 0 || quantity > remainingQuantity) {
       alert(
@@ -102,15 +112,17 @@ export function PickingStep({ nodes }: PickingStepProps) {
       return;
     }
 
+    const combinedId = `${partitionId}|${levelId}`;
     addPick({
-      structureId: selectedStructureId!,
-      levelId: selectedLevelId!,
+      structureId: selectedZoneId!,
+      levelId,
       partitionId,
-      partitionName,
+      partitionName: `${levelName} - Partition ${partitionName}`,
       pickedQuantity: quantity,
     });
 
     setPickQuantity("0");
+    setSelectedPartitionLevelId(null);
   };
 
   return (
@@ -119,7 +131,7 @@ export function PickingStep({ nodes }: PickingStepProps) {
       <div className="border-b border-border pb-3">
         <h3 className="text-sm font-semibold text-foreground">Picking Process</h3>
         <p className="text-xs text-muted-foreground mt-1">
-          Select product locations and pick quantities from warehouse
+          Select a zone to see available partitions and levels
         </p>
       </div>
 
@@ -148,6 +160,233 @@ export function PickingStep({ nodes }: PickingStepProps) {
         <div className="h-2 bg-muted rounded-full overflow-hidden">
           <div
             className="h-full bg-blue-600 transition-all duration-300"
+            style={{
+              width: `${((currentRequest.quantity - remainingQuantity) / currentRequest.quantity) * 100}%`,
+            }}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground mt-2">
+          Remaining: {remainingQuantity} {currentRequest.productUOM}
+        </p>
+      </div>
+
+      {/* Zone Selection */}
+      <div className="space-y-2">
+        <label className="text-xs font-semibold text-foreground">Select Zone</label>
+        <div className="grid grid-cols-2 gap-2">
+          {zones.map((zone) => (
+            <button
+              key={zone.id}
+              onClick={() => {
+                selectZone(zone.id);
+                setPickQuantity("0");
+                setSelectedPartitionLevelId(null);
+              }}
+              className={`p-3 rounded-lg border-2 transition-all text-left ${
+                selectedZoneId === zone.id
+                  ? "border-blue-500 bg-blue-50"
+                  : "border-border bg-background hover:border-blue-300"
+              }`}
+            >
+              <p className="text-xs font-semibold text-foreground">
+                {zone.data?.label || zone.id}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {partitionsAndLevels.filter(
+                  (p) => selectedZoneId === zone.id
+                ).length} locations
+              </p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Partitions and Levels - Show when zone selected */}
+      {selectedZoneId && partitionsAndLevels.length > 0 && (
+        <div className="space-y-3 border-t border-border pt-4">
+          <h4 className="text-xs font-semibold text-foreground">
+            Available Locations in {zones.find(z => z.id === selectedZoneId)?.data?.label}
+          </h4>
+          
+          {/* Group by Level */}
+          {Object.entries(partitionsByLevel).map(([levelId, { levelName, partitions }]) => (
+            <div key={levelId} className="border border-amber-200 rounded-lg p-3 bg-amber-50/30">
+              <h5 className="text-xs font-semibold text-amber-900 mb-3">
+                {levelName}
+              </h5>
+              
+              <div className="space-y-2">
+                {partitions.map((item) => {
+                  const isPicked = picks.some(
+                    (p) => p.partitionId === item.partitionId && p.levelId === item.levelId
+                  );
+                  const availableQuantity = item.maxCapacity - item.usedCapacity;
+                  const isSelected = selectedPartitionLevelId === `${item.partitionId}|${item.levelId}`;
+                  
+                  return (
+                    <div
+                      key={`${item.partitionId}|${item.levelId}`}
+                      onClick={() => {
+                        if (!isPicked && availableQuantity > 0) {
+                          setSelectedPartitionLevelId(
+                            isSelected ? null : `${item.partitionId}|${item.levelId}`
+                          );
+                        }
+                      }}
+                      className={`border rounded-lg p-3 cursor-pointer transition-all ${
+                        isPicked
+                          ? "border-green-500 bg-green-50"
+                          : isSelected
+                            ? "border-blue-500 bg-blue-50"
+                            : availableQuantity > 0
+                              ? "border-border bg-background hover:border-blue-300"
+                              : "border-red-300 bg-red-50/20 opacity-60 cursor-not-allowed"
+                      }`}
+                    >
+                      {/* Partition Header */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-200 text-xs font-bold">
+                            {item.partitionName}
+                          </span>
+                          <span className="text-xs font-semibold text-foreground">
+                            Partition {item.partitionName}
+                          </span>
+                        </div>
+                        {isPicked && (
+                          <span className="text-xs font-medium text-green-600 bg-green-100 px-2 py-1 rounded">
+                            ✓ Picked
+                          </span>
+                        )}
+                        {!isPicked && availableQuantity === 0 && (
+                          <span className="text-xs font-medium text-red-600 bg-red-100 px-2 py-1 rounded">
+                            Full
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Capacity Bar */}
+                      <div className="mb-3 space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">Capacity</span>
+                          <span className="font-medium text-foreground">
+                            {item.usedCapacity} / {item.maxCapacity}
+                          </span>
+                        </div>
+                        <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full transition-all ${
+                              item.usedCapacity / item.maxCapacity > 0.8
+                                ? "bg-red-500"
+                                : item.usedCapacity / item.maxCapacity > 0.5
+                                  ? "bg-amber-500"
+                                  : "bg-green-500"
+                            }`}
+                            style={{
+                              width: `${(item.usedCapacity / item.maxCapacity) * 100}%`,
+                            }}
+                          />
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Available: {availableQuantity} units
+                        </div>
+                      </div>
+
+                      {/* Pick Controls - Show only when selected */}
+                      {isSelected && !isPicked && availableQuantity > 0 && (
+                        <div className="flex gap-2 items-end pt-2 border-t border-blue-200">
+                          <div className="flex-1">
+                            <label className="text-xs font-medium text-foreground block mb-1">
+                              Pick Qty
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              max={Math.min(remainingQuantity, availableQuantity)}
+                              value={pickQuantity}
+                              onChange={(e) => setPickQuantity(e.target.value)}
+                              placeholder="0"
+                              className="w-full px-2 py-1.5 text-xs border border-blue-300 rounded bg-white text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              autoFocus
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Max: {Math.min(remainingQuantity, availableQuantity)}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() =>
+                              handleAddPick(
+                                item.partitionId,
+                                item.partitionName,
+                                item.levelId,
+                                item.levelName
+                              )
+                            }
+                            className="px-3 py-1.5 text-xs font-medium rounded bg-green-600 text-white hover:bg-green-700 transition-colors h-fit"
+                          >
+                            <Plus size={16} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Picked Items Summary */}
+      {picks.length > 0 && (
+        <div className="border border-green-300 rounded-lg p-3 bg-green-50">
+          <h4 className="text-xs font-semibold text-foreground mb-3 flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-600 text-white text-xs font-bold">
+              {picks.length}
+            </span>
+            Items Picked
+          </h4>
+          <div className="space-y-2">
+            {picks.map((pick, index) => (
+              <div
+                key={`${pick.partitionId}|${pick.levelId}`}
+                className="flex items-center justify-between p-2.5 bg-white rounded border border-green-200 hover:border-green-400 transition-colors"
+              >
+                <div className="text-xs flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-600 text-white text-xs font-bold">
+                      {index + 1}
+                    </span>
+                    <p className="font-semibold text-foreground">
+                      {pick.partitionName}
+                    </p>
+                  </div>
+                  <p className="text-muted-foreground pl-7">
+                    Qty: <span className="font-medium text-green-600">{pick.pickedQuantity}</span> {currentRequest.productUOM}
+                  </p>
+                </div>
+                <button
+                  onClick={() => removePick(pick.partitionId)}
+                  className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                  title="Remove this pick"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!selectedZoneId && (
+        <div className="text-center py-8 text-muted-foreground">
+          <p className="text-xs">Select a zone above to view available picking locations</p>
+        </div>
+      )}
+    </div>
+  );
+}
             style={{
               width: `${
                 ((currentRequest.quantity - remainingQuantity) /
