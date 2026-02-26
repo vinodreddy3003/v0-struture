@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import type { StockInRequest, AllocationDetail, HandlingMethodType, AssignedEmployee } from "@/components/warehouse/types";
 
 export type AppMode = "design" | "stock-in";
@@ -56,6 +56,7 @@ interface StockInContextType {
 const StockInContext = createContext<StockInContextType | undefined>(undefined);
 
 export function StockInProvider({ children }: { children: React.ReactNode }) {
+  const [isClient, setIsClient] = useState(false);
   const [mode, setMode] = useState<AppMode>("design");
   const [currentStep, setCurrentStep] = useState<WorkflowStep>("request");
   const [currentRequestId, setCurrentRequestId] = useState<string | null>(null);
@@ -69,6 +70,11 @@ export function StockInProvider({ children }: { children: React.ReactNode }) {
   const [selectedHandlingMethod, setSelectedHandlingMethod] = useState<HandlingMethodType | null>(null);
   const [assignedEmployees, setAssignedEmployees] = useState<AssignedEmployee[]>([]);
   const [highlightedZoneId, setHighlightedZoneId] = useState<string | null>(null);
+
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const addRequest = useCallback((request: StockInRequest) => {
     setRequests((prev) => [...prev, request]);
@@ -240,7 +246,9 @@ export function StockInProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <StockInContext.Provider value={value}>{children}</StockInContext.Provider>
+    <StockInContext.Provider value={value}>
+      {isClient ? children : null}
+    </StockInContext.Provider>
   );
 }
 
