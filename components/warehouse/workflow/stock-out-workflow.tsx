@@ -1,17 +1,17 @@
 "use client";
 
 import { useStockOutStore } from "@/store/stock-out-store";
-import { StockOutRequestStep } from "./stock-out-request-step";
-import { PickingStep } from "./picking-step";
-import { VerificationStep } from "./verification-step";
+import { InventoryStep } from "./inventory-step";
+import { ItemSelectionStep } from "./item-selection-step";
+import { LocationSelectionStep } from "./location-selection-step";
+import { QuantityEntryStep } from "./quantity-entry-step";
 import { StockOutCompletionStep } from "./stock-out-completion-step";
 import type { Node } from "@xyflow/react";
-import type { StockOutRequest } from "@/components/warehouse/types";
 
 interface StockOutWorkflowProps {
   nodes: Node[];
-  onWorkflowComplete?: (callback: (pick: any) => void) => void;
-  onAddRequest?: (request: Omit<StockOutRequest, "id" | "status" | "picks">) => void;
+  onWorkflowComplete?: (callback: (data: any) => void) => void;
+  onAddRequest?: (request: any) => void;
 }
 
 export function StockOutWorkflow({
@@ -19,48 +19,36 @@ export function StockOutWorkflow({
   onWorkflowComplete,
   onAddRequest,
 }: StockOutWorkflowProps) {
-  const { currentStep, addRequest, completeWorkflow } = useStockOutStore();
-
-  const handleAddRequest = (request: Omit<StockOutRequest, "id" | "status" | "picks">) => {
-    const newRequest: StockOutRequest = {
-      id: `req-${Date.now()}`,
-      status: "pending",
-      picks: [],
-      ...request,
-    };
-    addRequest(newRequest);
-    onAddRequest?.(request);
-  };
-
-  const handleWorkflowComplete = () => {
-    completeWorkflow((pick) => {
-      // This callback will be called for each pick to update warehouse
-      onWorkflowComplete?.((pick) => {
-        // Partition update callback will be passed to canvas
-      });
-    });
-  };
+  const { currentStep, completeWorkflow } = useStockOutStore();
 
   // Step progress indicator
   const steps: Array<{ key: typeof currentStep; label: string; number: number }> = [
-    { key: "request", label: "Request", number: 1 },
-    { key: "picking", label: "Picking", number: 2 },
-    { key: "verification", label: "Verification", number: 3 },
-    { key: "completion", label: "Completion", number: 4 },
+    { key: "inventory", label: "Inventory", number: 1 },
+    { key: "select-item", label: "Item", number: 2 },
+    { key: "select-structure", label: "Structure", number: 3 },
+    { key: "quantity", label: "Quantity", number: 4 },
+    { key: "completion", label: "Complete", number: 5 },
   ];
 
   const currentStepIndex = steps.findIndex((s) => s.key === currentStep);
+
+  const handleWorkflowComplete = () => {
+    completeWorkflow();
+    onWorkflowComplete?.((data) => {
+      // Callback for warehouse updates
+    });
+  };
 
   return (
     <div className="space-y-4">
       {/* Step Progress Indicator */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           {steps.map((step, idx) => (
-            <div key={step.key} className="flex flex-col items-center flex-1">
+            <div key={step.key} className="flex flex-col items-center flex-1 relative">
               {/* Step Circle */}
               <div
-                className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold transition-colors ${
+                className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold transition-colors z-10 ${
                   idx <= currentStepIndex
                     ? "bg-purple-600 text-white"
                     : "bg-muted text-muted-foreground"
@@ -70,7 +58,7 @@ export function StockOutWorkflow({
               </div>
               {/* Step Label */}
               <span
-                className={`text-xs mt-1 text-center ${
+                className={`text-xs mt-1 text-center whitespace-nowrap text-balance ${
                   idx === currentStepIndex
                     ? "font-semibold text-foreground"
                     : "text-muted-foreground"
@@ -81,12 +69,11 @@ export function StockOutWorkflow({
               {/* Connector Line */}
               {idx < steps.length - 1 && (
                 <div
-                  className={`h-1 w-full mt-1 transition-colors ${
+                  className={`absolute h-1 top-3.5 left-1/2 transition-colors ${
                     idx < currentStepIndex ? "bg-purple-600" : "bg-muted"
                   }`}
                   style={{
                     width: "calc(100% + 8px)",
-                    marginLeft: 4,
                   }}
                 />
               )}
@@ -96,12 +83,19 @@ export function StockOutWorkflow({
       </div>
 
       {/* Step Content */}
-      <div className="border border-border rounded-lg p-4 bg-background">
-        {currentStep === "request" && (
-          <StockOutRequestStep onAddRequest={handleAddRequest} />
+      <div className="border border-border rounded-lg p-4 bg-background min-h-96">
+        {currentStep === "inventory" && (
+          <InventoryStep />
         )}
-        {currentStep === "picking" && <PickingStep nodes={nodes} />}
-        {currentStep === "verification" && <VerificationStep />}
+        {currentStep === "select-item" && (
+          <ItemSelectionStep />
+        )}
+        {currentStep === "select-structure" && (
+          <LocationSelectionStep nodes={nodes} />
+        )}
+        {currentStep === "quantity" && (
+          <QuantityEntryStep />
+        )}
         {currentStep === "completion" && (
           <StockOutCompletionStep />
         )}

@@ -4,7 +4,7 @@ import { create } from "zustand";
 import type { StockOutRequest, PickDetail } from "@/components/warehouse/types";
 
 export type AppMode = "design" | "stock-out";
-export type WorkflowStep = "request" | "picking" | "verification" | "completion";
+export type StockOutWorkflowStep = "inventory" | "select-item" | "select-structure" | "quantity" | "completion";
 
 interface PickState {
   structureId: string;
@@ -17,19 +17,36 @@ interface PickState {
 interface StockOutStore {
   mode: AppMode;
 
-  // 4-Step Workflow State
-  currentStep: WorkflowStep;
+  // 5-Step Workflow State
+  currentStep: StockOutWorkflowStep;
   currentRequestId: string | null;
   requests: StockOutRequest[];
 
-  // Picking step state
-  selectedZoneId: string | null;
-  selectedStructureId: string | null;
-  selectedLevelId: string | null;
-  picks: PickState[];
-  remainingQuantity: number;
+  // Inventory step state
+  availableItems: Array<{
+    id: string;
+    productName: string;
+    productType: string;
+    quantity: number;
+    stockInRequestId: string;
+  }>;
 
-  // Verification step state
+  // Item selection state
+  selectedItemId: string | null;
+  selectedItem: any | null;
+
+  // Structure selection state
+  selectedStructureId: string | null;
+  structuresWithItem: Array<{
+    structureId: string;
+    structureName: string;
+    availableQuantity: number;
+  }>;
+
+  // Quantity entry state
+  requestedQuantity: number;
+
+  // Remaining state
   verificationConfirmed: boolean;
 
   // UI state
@@ -37,26 +54,28 @@ interface StockOutStore {
 
   // Mode & Workflow Actions
   setMode: (mode: AppMode) => void;
-  setCurrentStep: (step: WorkflowStep) => void;
+  setCurrentStep: (step: StockOutWorkflowStep) => void;
 
   // Request Management
   addRequest: (request: StockOutRequest) => void;
-  approveRequest: (requestId: string) => void;
-  rejectRequest: (requestId: string) => void;
-  startWorkflow: (requestId: string) => void;
   resetWorkflow: () => void;
 
-  // Picking Actions
-  selectZone: (zoneId: string | null) => void;
-  selectStructure: (structureId: string | null) => void;
-  selectLevel: (levelId: string | null) => void;
-  addPick: (pick: PickState) => void;
-  removePick: (partitionId: string) => void;
-  setRemainingQuantity: (quantity: number) => void;
-
+  // Inventory Actions
+  loadAvailableItems: (items: any[]) => void;
+  
+  // Item Selection Actions
+  selectItem: (itemId: string, item: any) => void;
+  
+  // Structure Selection Actions
+  loadStructuresForItem: (structures: any[]) => void;
+  selectStructure: (structureId: string) => void;
+  
+  // Quantity Actions
+  setRequestedQuantity: (quantity: number) => void;
+  
   // Verification Actions
   confirmVerification: () => void;
-  completeWorkflow: (onPartitionUpdate?: (pick: PickState) => void) => void;
+  completeWorkflow: () => void;
 
   // UI Actions
   setHighlightedZone: (zoneId: string | null) => void;
@@ -64,21 +83,22 @@ interface StockOutStore {
 
 export const useStockOutStore = create<StockOutStore>((set, get) => ({
   mode: "design",
-  currentStep: "request",
+  currentStep: "inventory",
   currentRequestId: null,
   requests: [],
-  selectedZoneId: null,
+  availableItems: [],
+  selectedItemId: null,
+  selectedItem: null,
   selectedStructureId: null,
-  selectedLevelId: null,
-  picks: [],
-  remainingQuantity: 0,
+  structuresWithItem: [],
+  requestedQuantity: 0,
   verificationConfirmed: false,
   highlightedZoneId: null,
 
   // Mode & Workflow Actions
   setMode: (mode: AppMode) => set({ mode }),
 
-  setCurrentStep: (step: WorkflowStep) => set({ currentStep: step }),
+  setCurrentStep: (step: StockOutWorkflowStep) => set({ currentStep: step }),
 
   // Request Management
   addRequest: (request: StockOutRequest) =>
@@ -86,103 +106,65 @@ export const useStockOutStore = create<StockOutStore>((set, get) => ({
       requests: [...state.requests, request],
     })),
 
-  approveRequest: (requestId: string) =>
-    set((state) => ({
-      requests: state.requests.map((req) =>
-        req.id === requestId ? { ...req, status: "approved" } : req
-      ),
-    })),
-
-  rejectRequest: (requestId: string) =>
-    set((state) => ({
-      requests: state.requests.map((req) =>
-        req.id === requestId ? { ...req, status: "rejected" } : req
-      ),
-    })),
-
-  startWorkflow: (requestId: string) => {
-    const request = get().requests.find((r) => r.id === requestId);
-    if (request) {
-      set({
-        currentRequestId: requestId,
-        currentStep: "picking",
-        picks: [],
-        remainingQuantity: request.quantity,
-        verificationConfirmed: false,
-      });
-    }
-  },
-
   resetWorkflow: () =>
     set({
+      currentStep: "inventory",
       currentRequestId: null,
-      currentStep: "request",
-      selectedZoneId: null,
+      selectedItemId: null,
+      selectedItem: null,
       selectedStructureId: null,
-      selectedLevelId: null,
-      picks: [],
-      remainingQuantity: 0,
+      structuresWithItem: [],
+      requestedQuantity: 0,
       verificationConfirmed: false,
-      highlightedZoneId: null,
     }),
 
-  // Picking Actions
-  selectZone: (zoneId: string | null) =>
-    set({ selectedZoneId: zoneId, highlightedZoneId: zoneId }),
+  // Inventory Actions
+  loadAvailableItems: (items: any[]) => set({ availableItems: items }),
 
-  selectStructure: (structureId: string | null) =>
-    set({ selectedStructureId: structureId }),
-
-  selectLevel: (levelId: string | null) =>
-    set({ selectedLevelId: levelId }),
-
-  addPick: (pick: PickState) =>
-    set((state) => ({
-      picks: [...state.picks, pick],
-      remainingQuantity: Math.max(0, state.remainingQuantity - pick.pickedQuantity),
-    })),
-
-  removePick: (partitionId: string) =>
-    set((state) => {
-      const pick = state.picks.find((p) => p.partitionId === partitionId);
-      return {
-        picks: state.picks.filter((p) => p.partitionId !== partitionId),
-        remainingQuantity: pick
-          ? state.remainingQuantity + pick.pickedQuantity
-          : state.remainingQuantity,
-      };
+  // Item Selection Actions
+  selectItem: (itemId: string, item: any) =>
+    set({
+      selectedItemId: itemId,
+      selectedItem: item,
+      selectedStructureId: null,
+      requestedQuantity: 0,
     }),
 
-  setRemainingQuantity: (quantity: number) =>
-    set({ remainingQuantity: quantity }),
+  // Structure Selection Actions
+  loadStructuresForItem: (structures: any[]) =>
+    set({ structuresWithItem: structures }),
+
+  selectStructure: (structureId: string) =>
+    set({ selectedStructureId: structureId, requestedQuantity: 0 }),
+
+  // Quantity Actions
+  setRequestedQuantity: (quantity: number) =>
+    set({ requestedQuantity: quantity }),
 
   // Verification Actions
-  confirmVerification: () =>
-    set({ verificationConfirmed: true, currentStep: "verification" }),
+  confirmVerification: () => set({ verificationConfirmed: true }),
 
-  completeWorkflow: (onPartitionUpdate?: (pick: PickState) => void) => {
-    const state = get();
-    if (state.currentRequestId) {
-      // Call callback for each pick to update warehouse data
-      state.picks.forEach((pick) => {
-        if (onPartitionUpdate) {
-          onPartitionUpdate(pick);
-        }
-      });
-
-      // Mark request as completed
-      set((state) => ({
-        requests: state.requests.map((req) =>
-          req.id === state.currentRequestId
-            ? { ...req, status: "completed" }
-            : req
-        ),
-        currentStep: "completion",
-      }));
-    }
-  },
+  completeWorkflow: () =>
+    set((state) => ({
+      requests: [
+        ...state.requests,
+        {
+          id: `STO-${Date.now()}`,
+          date: new Date().toISOString().split("T")[0],
+          productName: state.selectedItem?.productName || "",
+          productType: state.selectedItem?.productType || "",
+          productValue: state.selectedItem?.productValue || 0,
+          productUOM: state.selectedItem?.productUOM || "",
+          quantity: state.requestedQuantity,
+          customer: "Stock Out",
+          status: "completed" as const,
+          picks: [],
+          notes: `Picked from structure ${state.selectedStructureId}`,
+        },
+      ],
+      currentStep: "completion",
+    })),
 
   // UI Actions
-  setHighlightedZone: (zoneId: string | null) =>
-    set({ highlightedZoneId: zoneId }),
+  setHighlightedZone: (zoneId: string | null) => set({ highlightedZoneId: zoneId }),
 }));
