@@ -1,6 +1,6 @@
 "use client";
 
-import { useStockInStore } from "@/store/stock-in-store";
+import { useStockIn } from "@/context/stock-in-context";
 import type { Node } from "@xyflow/react";
 import type { StructureData, ZoneData } from "@/components/warehouse/types";
 import { ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react";

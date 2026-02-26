@@ -1,6 +1,6 @@
 "use client";
 
-import { useStockInStore } from "@/store/stock-in-store";
+import { useStockIn } from "@/context/stock-in-context";
 import type { StockInRequest } from "@/components/warehouse/types";
 import { Check, X, Plus } from "lucide-react";
 import { useState } from "react";
@@ -10,7 +10,7 @@ interface StockInRequestStepProps {
 }
 
 export function StockInRequestStep({ onAddRequest }: StockInRequestStepProps) {
-  const { requests, approveRequest, rejectRequest, startWorkflow } = useStockInStore();
+  const { requests, approveRequest, rejectRequest, startWorkflow } = useStockIn();
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     productName: "Sample Product",

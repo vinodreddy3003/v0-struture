@@ -10,13 +10,13 @@ import {
 import type { Node } from "@xyflow/react";
 import { Copy, Trash2, Pencil, Thermometer } from "lucide-react";
 import { ZONE_LABELS, type ZoneData } from "../types";
-import { useStockInStore } from "@/store/stock-in-store";
+import { useStockIn } from "@/context/stock-in-context";
 
 type ZoneNodeProps = NodeProps<Node<ZoneData>>;
 
 function ZoneNodeComponent({ id, data, selected }: ZoneNodeProps) {
   const isColdStorage = data.zoneType === "cold-storage";
-  const { highlightedZoneId } = useStockInStore();
+  const { highlightedZoneId } = useStockIn();
   const isHighlighted = highlightedZoneId === id;
 
   return (

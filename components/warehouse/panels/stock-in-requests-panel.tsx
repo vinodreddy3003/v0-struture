@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronRight, CheckCircle, XCircle, Clock, Package, AlertCircle } from "lucide-react";
-import { useStockInStore } from "@/store/stock-in-store";
+import { useStockIn } from "@/context/stock-in-context";
 import type { StockInRequest } from "@/components/warehouse/types";
 
 interface StockInRequestsPanelProps {

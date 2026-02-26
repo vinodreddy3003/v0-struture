@@ -21,7 +21,7 @@ import { ElementNode } from "./nodes/element-node";
 import { ZoneNode } from "./nodes/zone-node";
 import { StructureNode } from "./nodes/structure-node";
 import { SidePanel } from "./side-panel";
-import { useStockInStore, type AppMode } from "@/store/stock-in-store";
+import { useStockIn, type AppMode } from "@/context/stock-in-context";
 
 import {
   GRID_SIZE,
@@ -50,7 +50,7 @@ export function WarehouseCanvas() {
   const [isEditingWarehouse, setIsEditingWarehouse] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedPartition, setSelectedPartition] = useState<{ partition: Record<string, unknown>; structureId: string; levelId: string } | null>(null);
-  const { mode, setMode } = useStockInStore();
+  const { mode, setMode } = useStockIn();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
   const warehouseNode = useMemo(

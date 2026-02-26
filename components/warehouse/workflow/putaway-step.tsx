@@ -1,6 +1,6 @@
 "use client";
 
-import { useStockInStore } from "@/store/stock-in-store";
+import { useStockIn } from "@/context/stock-in-context";
 import { CheckCircle2, Package } from "lucide-react";
 import { useState } from "react";
 import { PartitionLevelVisualization } from "@/components/warehouse/panels/partition-level-visualization";

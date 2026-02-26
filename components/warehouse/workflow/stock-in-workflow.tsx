@@ -1,6 +1,6 @@
 "use client";
 
-import { useStockInStore } from "@/store/stock-in-store";
+import { useStockIn } from "@/context/stock-in-context";
 import { StockInRequestStep } from "./stock-in-request-step";
 import { VehicleInfoStep } from "./vehicle-info-step";
 import { AllocationStep } from "./allocation-step";

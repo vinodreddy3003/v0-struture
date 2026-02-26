@@ -1,6 +1,6 @@
 "use client";
 
-import { useStockInStore } from "@/store/stock-in-store";
+import { useStockIn } from "@/context/stock-in-context";
 import { CheckCircle2, ArrowRight, Users, Boxes, Zap, Bell } from "lucide-react";
 
 interface CompletionStepProps {

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
+import { StockInProvider } from '@/context/stock-in-context'
 
 import './globals.css'
 
@@ -18,7 +19,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="font-sans antialiased">{children}</body>
+      <body className="font-sans antialiased">
+        <StockInProvider>
+          {children}
+        </StockInProvider>
+      </body>
     </html>
   )
 }

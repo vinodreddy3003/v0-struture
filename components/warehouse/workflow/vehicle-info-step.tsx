@@ -1,6 +1,6 @@
 "use client";
 
-import { useStockInStore } from "@/store/stock-in-store";
+import { useStockIn } from "@/context/stock-in-context";
 import type { VehicleInformation } from "@/components/warehouse/types";
 import { useState } from "react";
 

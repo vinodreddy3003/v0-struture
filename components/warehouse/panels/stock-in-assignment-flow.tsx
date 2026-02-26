@@ -2,7 +2,7 @@
 
 import { type Node } from "@xyflow/react";
 import { ChevronLeft, Plus, Trash2, CheckCircle, AlertCircle } from "lucide-react";
-import { useStockInStore } from "@/store/stock-in-store";
+import { useStockIn } from "@/context/stock-in-context";
 import type { StructureData } from "@/components/warehouse/types";
 
 interface StockInAssignmentFlowProps {

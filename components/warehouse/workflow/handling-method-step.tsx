@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useStockInStore } from "@/store/stock-in-store";
+import { useStockIn } from "@/context/stock-in-context";
 import { Bell, Users, Zap, Boxes, ChevronDown } from "lucide-react";
 import type { HandlingMethodType, AssignedEmployee } from "@/components/warehouse/types";
 
