@@ -48,8 +48,8 @@ export function StockInWorkflow({
     { key: "request", label: "Request", number: 1 },
     { key: "vehicle", label: "Vehicle", number: 2 },
     { key: "allocation", label: "Allocation", number: 3 },
-    { key: "putaway", label: "Putaway", number: 4 },
-    { key: "handling", label: "Handling", number: 5 },
+    { key: "handling", label: "Handling", number: 4 },
+    { key: "putaway", label: "Putaway", number: 5 },
     { key: "completion", label: "Completion", number: 6 },
   ];
 
@@ -58,42 +58,47 @@ export function StockInWorkflow({
   return (
     <div className="space-y-4">
       {/* Step Progress Indicator */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
+      <div className="space-y-3">
+        <div className="flex items-center gap-1">
           {steps.map((step, idx) => (
-            <div key={step.key} className="flex flex-col items-center flex-1">
+            <div key={step.key} className="flex items-center flex-1">
               {/* Step Circle */}
               <div
-                className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold transition-colors ${
+                className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold transition-all shrink-0 ${
                   idx <= currentStepIndex
-                    ? "bg-blue-600 text-white"
-                    : "bg-muted text-muted-foreground"
+                    ? "bg-blue-600 text-white shadow-md scale-100"
+                    : "bg-gray-200 text-gray-500 scale-95"
                 }`}
               >
                 {step.number}
               </div>
-              {/* Step Label */}
+              {/* Connector Line */}
+              {idx < steps.length - 1 && (
+                <div
+                  className={`flex-1 h-1 transition-all ${
+                    idx < currentStepIndex ? "bg-blue-600" : "bg-gray-300"
+                  }`}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Step Labels */}
+        <div className="flex items-center gap-1">
+          {steps.map((step, idx) => (
+            <div key={`label-${step.key}`} className="flex-1 text-center px-1">
               <span
-                className={`text-xs mt-1 text-center ${
-                  idx === currentStepIndex
-                    ? "font-semibold text-foreground"
-                    : "text-muted-foreground"
+                className={`text-xs font-medium transition-colors ${
+                  idx <= currentStepIndex
+                    ? idx === currentStepIndex
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-700"
+                    : "text-gray-400"
                 }`}
               >
                 {step.label}
               </span>
-              {/* Connector Line */}
-              {idx < steps.length - 1 && (
-                <div
-                  className={`h-1 w-full mt-1 transition-colors ${
-                    idx < currentStepIndex ? "bg-blue-600" : "bg-muted"
-                  }`}
-                  style={{
-                    width: "calc(100% + 8px)",
-                    marginLeft: 4,
-                  }}
-                />
-              )}
             </div>
           ))}
         </div>
@@ -106,8 +111,8 @@ export function StockInWorkflow({
         )}
         {currentStep === "vehicle" && <VehicleInfoStep />}
         {currentStep === "allocation" && <AllocationStep nodes={nodes} />}
-        {currentStep === "putaway" && <PutawayStep />}
         {currentStep === "handling" && <HandlingMethodStep />}
+        {currentStep === "putaway" && <PutawayStep />}
         {currentStep === "completion" && (
           <CompletionStep onWorkflowComplete={handleWorkflowComplete} />
         )}

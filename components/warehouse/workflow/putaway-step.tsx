@@ -85,8 +85,8 @@ export function PutawayStep() {
       window.dispatchEvent(event);
     });
 
-    // Proceed to handling method step instead of completion
-    setCurrentStep("handling");
+    // Proceed to completion
+    setCurrentStep("completion");
   };
 
   const partitionDetails = getPartitionDetails();
@@ -223,7 +223,7 @@ export function PutawayStep() {
               : "bg-muted text-muted-foreground cursor-not-allowed"
           }`}
         >
-          Confirm & Continue
+          Confirm & Complete
         </button>
       </div>
     </div>

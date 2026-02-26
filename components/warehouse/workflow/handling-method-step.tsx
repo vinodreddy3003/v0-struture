@@ -95,9 +95,9 @@ export function HandlingMethodStep() {
     saveHandlingMethod();
     setShowNotificationToast(true);
 
-    // Proceed to completion step after a short delay
+    // Proceed to putaway step after a short delay
     setTimeout(() => {
-      setCurrentStep("completion");
+      setCurrentStep("putaway");
     }, 1500);
   };
 

@@ -4,7 +4,7 @@ import { create } from "zustand";
 import type { StockInRequest, AllocationDetail, HandlingMethodType, AssignedEmployee } from "@/components/warehouse/types";
 
 export type AppMode = "design" | "stock-in";
-export type WorkflowStep = "request" | "vehicle" | "allocation" | "putaway" | "handling" | "completion";
+export type WorkflowStep = "request" | "vehicle" | "allocation" | "handling" | "putaway" | "completion";
 
 interface AllocationState {
   structureId: string;

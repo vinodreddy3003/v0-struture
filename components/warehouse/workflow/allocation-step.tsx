@@ -286,7 +286,7 @@ export function AllocationStep({ nodes }: AllocationStepProps) {
           Back
         </button>
         <button
-          onClick={() => setCurrentStep("putaway")}
+          onClick={() => setCurrentStep("handling")}
           disabled={!canProceedToputaway}
           className={`flex-1 px-3 py-1.5 text-xs font-medium rounded transition-colors ${
             canProceedToputaway
@@ -294,7 +294,7 @@ export function AllocationStep({ nodes }: AllocationStepProps) {
               : "bg-muted text-muted-foreground cursor-not-allowed"
           }`}
         >
-          Proceed to Putaway
+          Proceed to Handling
         </button>
       </div>
     </div>
