@@ -73,7 +73,7 @@ export function StockInAssignmentFlow({
       {currentAssignmentStep === "zone-select" && (
         <div className="space-y-2">
           <h3 className="text-sm font-semibold text-foreground">Select Zone (Optional)</h3>
-          <div className="space-y-1 max-h-48 overflow-y-auto">
+          <div className="space-y-1 max-h-48">
             <button
               onClick={() => {
                 selectZone(null);
@@ -129,7 +129,7 @@ export function StockInAssignmentFlow({
             Back to Zone Selection
           </button>
           <h3 className="text-sm font-semibold text-foreground">Select Structure</h3>
-          <div className="space-y-1 max-h-48 overflow-y-auto">
+          <div className="space-y-1 max-h-48">
             {structures.length === 0 ? (
               <div className="text-center py-4 text-muted-foreground text-xs">
                 No structures in this zone
@@ -181,7 +181,7 @@ export function StockInAssignmentFlow({
           <div className="text-xs text-muted-foreground mb-2">
             Click partitions to allocate stock. You can spread across multiple partitions.
           </div>
-          <div className="space-y-2 max-h-56 overflow-y-auto border border-border rounded-md p-2 bg-muted/20">
+          <div className="space-y-2 max-h-56 border border-border rounded-md p-2 bg-muted/20">
             {/* Render partition selector here - will be implemented in next component */}
             <div className="text-xs text-muted-foreground text-center py-4">
               Partition selector component will be rendered here

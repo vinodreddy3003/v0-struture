@@ -140,7 +140,7 @@ export function SidePanel({
         </h2>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-hidden">
         {/* DESIGN MODE */}
         {mode === "design" && (
           <>
