@@ -26,15 +26,7 @@ export function InventoryStep() {
   const handleSelectItem = (item: any) => {
     selectItem(item.id, item);
     
-    // Prepare structures with the item
-    const structures = item.allocations.map((alloc: any) => ({
-      structureId: alloc.structureId,
-      levelId: alloc.levelId,
-      partitionId: alloc.partitionId,
-      quantity: alloc.allocatedQuantity,
-    }));
-    
-    loadStructuresForItem(structures);
+    // Go directly to structure selection (skip item-selection step)
     setCurrentStep("select-structure");
   };
 

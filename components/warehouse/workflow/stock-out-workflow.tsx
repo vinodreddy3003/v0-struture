@@ -2,7 +2,6 @@
 
 import { useStockOutStore } from "@/store/stock-out-store";
 import { InventoryStep } from "./inventory-step";
-import { ItemSelectionStep } from "./item-selection-step";
 import { LocationSelectionStep } from "./location-selection-step";
 import { QuantityEntryStep } from "./quantity-entry-step";
 import { StockOutCompletionStep } from "./stock-out-completion-step";
@@ -21,13 +20,12 @@ export function StockOutWorkflow({
 }: StockOutWorkflowProps) {
   const { currentStep, completeWorkflow } = useStockOutStore();
 
-  // Step progress indicator
+  // Step progress indicator - 4 main steps (skip select-item)
   const steps: Array<{ key: typeof currentStep; label: string; number: number }> = [
     { key: "inventory", label: "Inventory", number: 1 },
-    { key: "select-item", label: "Item", number: 2 },
-    { key: "select-structure", label: "Structure", number: 3 },
-    { key: "quantity", label: "Quantity", number: 4 },
-    { key: "completion", label: "Complete", number: 5 },
+    { key: "select-structure", label: "Structure", number: 2 },
+    { key: "quantity", label: "Quantity", number: 3 },
+    { key: "completion", label: "Complete", number: 4 },
   ];
 
   const currentStepIndex = steps.findIndex((s) => s.key === currentStep);
@@ -86,9 +84,6 @@ export function StockOutWorkflow({
       <div className="border border-border rounded-lg p-4 bg-background min-h-96">
         {currentStep === "inventory" && (
           <InventoryStep />
-        )}
-        {currentStep === "select-item" && (
-          <ItemSelectionStep />
         )}
         {currentStep === "select-structure" && (
           <LocationSelectionStep nodes={nodes} />

@@ -4,7 +4,7 @@ import { create } from "zustand";
 import type { StockOutRequest, PickDetail } from "@/components/warehouse/types";
 
 export type AppMode = "design" | "stock-out";
-export type StockOutWorkflowStep = "inventory" | "select-item" | "select-structure" | "quantity" | "completion";
+export type StockOutWorkflowStep = "inventory" | "select-structure" | "quantity" | "completion";
 
 interface PickState {
   structureId: string;
