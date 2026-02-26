@@ -1,10 +1,10 @@
 "use client";
 
 import { create } from "zustand";
-import type { StockInRequest, AllocationDetail } from "@/components/warehouse/types";
+import type { StockInRequest, AllocationDetail, HandlingMethodType, AssignedEmployee } from "@/components/warehouse/types";
 
 export type AppMode = "design" | "stock-in";
-export type WorkflowStep = "request" | "vehicle" | "allocation" | "putaway" | "completion";
+export type WorkflowStep = "request" | "vehicle" | "allocation" | "putaway" | "handling" | "completion";
 
 interface AllocationState {
   structureId: string;
@@ -17,7 +17,7 @@ interface AllocationState {
 interface StockInStore {
   mode: AppMode;
   
-  // 4-Step Workflow State
+  // 6-Step Workflow State
   currentStep: WorkflowStep;
   currentRequestId: string | null;
   requests: StockInRequest[];
@@ -31,6 +31,10 @@ interface StockInStore {
   
   // Putaway step state
   putawayConfirmed: boolean;
+  
+  // Handling Method step state
+  selectedHandlingMethod: HandlingMethodType | null;
+  assignedEmployees: AssignedEmployee[];
   
   // UI state
   highlightedZoneId: string | null;
@@ -57,6 +61,12 @@ interface StockInStore {
   // Vehicle Information Actions
   updateVehicleInfo: (vehicleInfo: any) => void;
   
+  // Handling Method Actions
+  selectHandlingMethod: (method: HandlingMethodType) => void;
+  addAssignedEmployee: (employee: AssignedEmployee) => void;
+  removeAssignedEmployee: (employeeId: string) => void;
+  saveHandlingMethod: () => void;
+  
   // Putaway Actions
   confirmPutaway: () => void;
   completeWorkflow: (onPartitionUpdate?: (allocation: AllocationState) => void) => void;
@@ -76,6 +86,8 @@ export const useStockInStore = create<StockInStore>((set, get) => ({
   allocations: [],
   remainingQuantity: 0,
   putawayConfirmed: false,
+  selectedHandlingMethod: null,
+  assignedEmployees: [],
   highlightedZoneId: null,
   
   // Mode & Workflow Actions
@@ -112,6 +124,8 @@ export const useStockInStore = create<StockInStore>((set, get) => ({
         allocations: [],
         remainingQuantity: request.quantity,
         putawayConfirmed: false,
+        selectedHandlingMethod: null,
+        assignedEmployees: [],
       });
     }
   },
@@ -126,6 +140,8 @@ export const useStockInStore = create<StockInStore>((set, get) => ({
       allocations: [],
       remainingQuantity: 0,
       putawayConfirmed: false,
+      selectedHandlingMethod: null,
+      assignedEmployees: [],
       highlightedZoneId: null,
     }),
   
@@ -159,6 +175,50 @@ export const useStockInStore = create<StockInStore>((set, get) => ({
   setRemainingQuantity: (quantity: number) =>
     set({ remainingQuantity: quantity }),
   
+  // Vehicle Information Actions
+  updateVehicleInfo: (vehicleInfo: any) =>
+    set((state) => ({
+      requests: state.requests.map((req) =>
+        req.id === state.currentRequestId
+          ? { ...req, vehicleInfo }
+          : req
+      ),
+    })),
+  
+  // Handling Method Actions
+  selectHandlingMethod: (method: HandlingMethodType) =>
+    set({ selectedHandlingMethod: method, assignedEmployees: [] }),
+  
+  addAssignedEmployee: (employee: AssignedEmployee) =>
+    set((state) => {
+      const exists = state.assignedEmployees.some((e) => e.id === employee.id);
+      if (exists) return state;
+      return {
+        assignedEmployees: [...state.assignedEmployees, employee],
+      };
+    }),
+  
+  removeAssignedEmployee: (employeeId: string) =>
+    set((state) => ({
+      assignedEmployees: state.assignedEmployees.filter((e) => e.id !== employeeId),
+    })),
+  
+  saveHandlingMethod: () =>
+    set((state) => ({
+      requests: state.requests.map((req) =>
+        req.id === state.currentRequestId
+          ? {
+              ...req,
+              handlingMethodInfo: {
+                method: state.selectedHandlingMethod!,
+                assignedEmployees: state.assignedEmployees,
+                timestamp: new Date().toISOString(),
+              },
+            }
+          : req
+      ),
+    })),
+  
   // Putaway Actions
   confirmPutaway: () =>
     set({ putawayConfirmed: true, currentStep: "putaway" }),
@@ -185,13 +245,7 @@ export const useStockInStore = create<StockInStore>((set, get) => ({
     }
   },
   
-  // Vehicle Information Actions
-  updateVehicleInfo: (vehicleInfo: any) =>
-    set((state) => ({
-      requests: state.requests.map((req) =>
-        req.id === state.currentRequestId
-          ? { ...req, vehicleInfo }
-          : req
-      ),
-    })),
+  // UI Actions
+  setHighlightedZone: (zoneId: string | null) =>
+    set({ highlightedZoneId: zoneId }),
 }));

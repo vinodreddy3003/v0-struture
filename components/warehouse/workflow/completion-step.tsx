@@ -1,7 +1,7 @@
 "use client";
 
 import { useStockInStore } from "@/store/stock-in-store";
-import { CheckCircle2, ArrowRight } from "lucide-react";
+import { CheckCircle2, ArrowRight, Users, Boxes, Zap, Bell } from "lucide-react";
 
 interface CompletionStepProps {
   onWorkflowComplete?: () => void;
@@ -124,6 +124,60 @@ export function CompletionStep({ onWorkflowComplete }: CompletionStepProps) {
                 <span className="font-medium text-foreground capitalize">
                   {currentRequest.vehicleInfo.vehicleType}
                 </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Handling Method Information */}
+        {currentRequest.handlingMethodInfo && (
+          <div className="space-y-2">
+            <h4 className="text-xs font-semibold text-green-900">Handling Method</h4>
+            <div className="bg-white rounded p-2 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {currentRequest.handlingMethodInfo.method === "manpower" && (
+                    <>
+                      <Users className="w-4 h-4 text-blue-600" />
+                      <span className="text-xs font-medium text-foreground">Manual Handling</span>
+                    </>
+                  )}
+                  {currentRequest.handlingMethodInfo.method === "conveyor" && (
+                    <>
+                      <Boxes className="w-4 h-4 text-amber-600" />
+                      <span className="text-xs font-medium text-foreground">Conveyor Belt System</span>
+                    </>
+                  )}
+                  {currentRequest.handlingMethodInfo.method === "machine" && (
+                    <>
+                      <Zap className="w-4 h-4 text-purple-600" />
+                      <span className="text-xs font-medium text-foreground">Machinery Handling</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Assigned Employees */}
+              {currentRequest.handlingMethodInfo.assignedEmployees.length > 0 && (
+                <div className="border-t border-gray-200 pt-2">
+                  <div className="flex items-center gap-1 mb-1">
+                    <Bell className="w-3 h-3 text-green-600" />
+                    <span className="text-xs font-medium text-green-700">
+                      Notifications Sent to {currentRequest.handlingMethodInfo.assignedEmployees.length} Employee{currentRequest.handlingMethodInfo.assignedEmployees.length !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+                  <div className="space-y-1">
+                    {currentRequest.handlingMethodInfo.assignedEmployees.map((emp) => (
+                      <div key={emp.id} className="text-xs text-muted-foreground">
+                        <span className="font-medium">{emp.name}</span> ({emp.role}) - {emp.email}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="text-xs text-muted-foreground pt-1">
+                Processed: {new Date(currentRequest.handlingMethodInfo.timestamp).toLocaleString()}
               </div>
             </div>
           </div>

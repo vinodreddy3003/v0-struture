@@ -134,6 +134,22 @@ export interface VehicleInformation {
   vehicleType: string;
 }
 
+export type HandlingMethodType = "manpower" | "conveyor" | "machine";
+
+export interface AssignedEmployee {
+  id: string;
+  name: string;
+  email: string;
+  contactNumber: string;
+  role: string;
+}
+
+export interface HandlingMethodInfo {
+  method: HandlingMethodType;
+  assignedEmployees: AssignedEmployee[];
+  timestamp: string;
+}
+
 export interface StockInRequest {
   id: string;
   date: string;
@@ -147,4 +163,5 @@ export interface StockInRequest {
   allocations: AllocationDetail[];
   notes?: string;
   vehicleInfo?: VehicleInformation;
+  handlingMethodInfo?: HandlingMethodInfo;
 }

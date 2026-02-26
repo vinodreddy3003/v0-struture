@@ -5,6 +5,7 @@ import { StockInRequestStep } from "./stock-in-request-step";
 import { VehicleInfoStep } from "./vehicle-info-step";
 import { AllocationStep } from "./allocation-step";
 import { PutawayStep } from "./putaway-step";
+import { HandlingMethodStep } from "./handling-method-step";
 import { CompletionStep } from "./completion-step";
 import type { Node } from "@xyflow/react";
 import type { StockInRequest } from "@/components/warehouse/types";
@@ -48,7 +49,8 @@ export function StockInWorkflow({
     { key: "vehicle", label: "Vehicle", number: 2 },
     { key: "allocation", label: "Allocation", number: 3 },
     { key: "putaway", label: "Putaway", number: 4 },
-    { key: "completion", label: "Completion", number: 5 },
+    { key: "handling", label: "Handling", number: 5 },
+    { key: "completion", label: "Completion", number: 6 },
   ];
 
   const currentStepIndex = steps.findIndex((s) => s.key === currentStep);
@@ -105,6 +107,7 @@ export function StockInWorkflow({
         {currentStep === "vehicle" && <VehicleInfoStep />}
         {currentStep === "allocation" && <AllocationStep nodes={nodes} />}
         {currentStep === "putaway" && <PutawayStep />}
+        {currentStep === "handling" && <HandlingMethodStep />}
         {currentStep === "completion" && (
           <CompletionStep onWorkflowComplete={handleWorkflowComplete} />
         )}

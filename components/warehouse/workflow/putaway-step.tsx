@@ -16,7 +16,6 @@ export function PutawayStep() {
     currentRequestId,
     requests,
     allocations,
-    completeWorkflow,
     setCurrentStep,
   } = useStockInStore();
 
@@ -86,7 +85,8 @@ export function PutawayStep() {
       window.dispatchEvent(event);
     });
 
-    completeWorkflow();
+    // Proceed to handling method step instead of completion
+    setCurrentStep("handling");
   };
 
   const partitionDetails = getPartitionDetails();
@@ -223,7 +223,7 @@ export function PutawayStep() {
               : "bg-muted text-muted-foreground cursor-not-allowed"
           }`}
         >
-          Confirm & Complete
+          Confirm & Continue
         </button>
       </div>
     </div>
