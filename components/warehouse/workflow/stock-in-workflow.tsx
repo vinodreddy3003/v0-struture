@@ -56,51 +56,80 @@ export function StockInWorkflow({
   const currentStepIndex = steps.findIndex((s) => s.key === currentStep);
 
   return (
-    <div className="space-y-4">
-      {/* Step Progress Indicator */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-1">
-          {steps.map((step, idx) => (
-            <div key={step.key} className="flex items-center flex-1">
-              {/* Step Circle */}
-              <div
-                className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold transition-all shrink-0 ${
-                  idx <= currentStepIndex
-                    ? "bg-blue-600 text-white shadow-md scale-100"
-                    : "bg-gray-200 text-gray-500 scale-95"
-                }`}
-              >
-                {step.number}
+    <div className="space-y-6">
+      {/* Modern Workflow Progress Indicator */}
+      <div className="bg-gradient-to-r from-blue-50 to-blue-50 border border-blue-100 rounded-xl p-6">
+        {/* Progress Bar Background */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2">
+            {steps.map((step, idx) => (
+              <div key={step.key} className="flex items-center flex-1">
+                {/* Step Indicator */}
+                <div className="flex flex-col items-center w-full">
+                  <div
+                    className={`flex items-center justify-center w-12 h-12 rounded-full font-bold transition-all duration-300 ${
+                      idx < currentStepIndex
+                        ? "bg-blue-600 text-white shadow-lg scale-100"
+                        : idx === currentStepIndex
+                          ? "bg-blue-600 text-white shadow-lg scale-110"
+                          : "bg-gray-300 text-gray-600 scale-100"
+                    }`}
+                  >
+                    {idx < currentStepIndex ? "✓" : step.number}
+                  </div>
+                </div>
+
+                {/* Connector Line */}
+                {idx < steps.length - 1 && (
+                  <div
+                    className={`flex-1 h-1.5 mx-2 rounded-full transition-all duration-500 ${
+                      idx < currentStepIndex ? "bg-blue-600" : "bg-gray-300"
+                    }`}
+                  />
+                )}
               </div>
-              {/* Connector Line */}
-              {idx < steps.length - 1 && (
-                <div
-                  className={`flex-1 h-1 transition-all ${
-                    idx < currentStepIndex ? "bg-blue-600" : "bg-gray-300"
-                  }`}
-                />
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
-        {/* Step Labels */}
-        <div className="flex items-center gap-1">
-          {steps.map((step, idx) => (
-            <div key={`label-${step.key}`} className="flex-1 text-center px-1">
-              <span
-                className={`text-xs font-medium transition-colors ${
-                  idx <= currentStepIndex
-                    ? idx === currentStepIndex
-                      ? "text-blue-600 font-semibold"
-                      : "text-gray-700"
-                    : "text-gray-400"
-                }`}
+        {/* Step Labels and Current Status */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            {steps.map((step, idx) => (
+              <div
+                key={`label-${step.key}`}
+                className="flex-1 text-center"
               >
-                {step.label}
+                <span
+                  className={`text-sm font-semibold transition-colors duration-300 ${
+                    idx === currentStepIndex
+                      ? "text-blue-600"
+                      : idx < currentStepIndex
+                        ? "text-gray-700"
+                        : "text-gray-400"
+                  }`}
+                >
+                  {step.label}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Current Step Info */}
+          <div className="flex items-center gap-2 mt-4 pt-4 border-t border-blue-200">
+            <div className="w-2 h-2 rounded-full bg-blue-600" />
+            <span className="text-sm text-gray-700">
+              <span className="font-semibold text-blue-600">
+                {steps[currentStepIndex]?.label}
               </span>
-            </div>
-          ))}
+              {" "} - {steps[currentStepIndex]?.label === "Request" && "Create new stock-in request"}
+              {steps[currentStepIndex]?.label === "Vehicle" && "Enter vehicle details"}
+              {steps[currentStepIndex]?.label === "Allocation" && "Allocate stock to zones"}
+              {steps[currentStepIndex]?.label === "Handling" && "Select handling method"}
+              {steps[currentStepIndex]?.label === "Putaway" && "Confirm putaway to warehouse"}
+              {steps[currentStepIndex]?.label === "Completion" && "Complete workflow and view summary"}
+            </span>
+          </div>
         </div>
       </div>
 
