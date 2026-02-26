@@ -280,10 +280,10 @@ export function AllocationStep({ nodes }: AllocationStepProps) {
       {/* Action Buttons */}
       <div className="flex gap-2 pt-3 border-t border-border">
         <button
-          onClick={() => setCurrentStep("request")}
+          onClick={() => setCurrentStep("vehicle")}
           className="flex-1 px-3 py-1.5 text-xs font-medium rounded bg-muted text-foreground hover:bg-muted/80 transition-colors"
         >
-          Cancel
+          Back
         </button>
         <button
           onClick={() => setCurrentStep("putaway")}

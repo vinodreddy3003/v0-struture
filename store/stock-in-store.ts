@@ -4,7 +4,7 @@ import { create } from "zustand";
 import type { StockInRequest, AllocationDetail } from "@/components/warehouse/types";
 
 export type AppMode = "design" | "stock-in";
-export type WorkflowStep = "request" | "allocation" | "putaway" | "completion";
+export type WorkflowStep = "request" | "vehicle" | "allocation" | "putaway" | "completion";
 
 interface AllocationState {
   structureId: string;
@@ -53,6 +53,9 @@ interface StockInStore {
   addAllocation: (allocation: AllocationState) => void;
   removeAllocation: (partitionId: string) => void;
   setRemainingQuantity: (quantity: number) => void;
+  
+  // Vehicle Information Actions
+  updateVehicleInfo: (vehicleInfo: any) => void;
   
   // Putaway Actions
   confirmPutaway: () => void;
@@ -105,7 +108,7 @@ export const useStockInStore = create<StockInStore>((set, get) => ({
     if (request) {
       set({
         currentRequestId: requestId,
-        currentStep: "allocation",
+        currentStep: "vehicle",
         allocations: [],
         remainingQuantity: request.quantity,
         putawayConfirmed: false,
@@ -182,7 +185,13 @@ export const useStockInStore = create<StockInStore>((set, get) => ({
     }
   },
   
-  // UI Actions
-  setHighlightedZone: (zoneId: string | null) =>
-    set({ highlightedZoneId: zoneId }),
+  // Vehicle Information Actions
+  updateVehicleInfo: (vehicleInfo: any) =>
+    set((state) => ({
+      requests: state.requests.map((req) =>
+        req.id === state.currentRequestId
+          ? { ...req, vehicleInfo }
+          : req
+      ),
+    })),
 }));

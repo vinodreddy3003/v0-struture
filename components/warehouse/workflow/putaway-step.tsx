@@ -118,6 +118,31 @@ export function PutawayStep() {
         </div>
       </div>
 
+      {/* Vehicle Information - Tracking & Verification */}
+      {currentRequest.vehicleInfo && (
+        <div className="border border-border rounded-lg p-3 bg-amber-50">
+          <h4 className="text-xs font-semibold text-amber-900 mb-2">Vehicle Information</h4>
+          <div className="grid grid-cols-2 gap-2 text-xs text-amber-800">
+            <div>
+              <span className="font-medium">Vehicle Number:</span>
+              <p>{currentRequest.vehicleInfo.vehicleNumber}</p>
+            </div>
+            <div>
+              <span className="font-medium">Driver Name:</span>
+              <p>{currentRequest.vehicleInfo.driverName}</p>
+            </div>
+            <div>
+              <span className="font-medium">Contact:</span>
+              <p>{currentRequest.vehicleInfo.contactNumber}</p>
+            </div>
+            <div>
+              <span className="font-medium">Vehicle Type:</span>
+              <p className="capitalize">{currentRequest.vehicleInfo.vehicleType}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Partition Level Visualization */}
       <div className="space-y-2">
         <label className="text-xs font-medium text-foreground">Confirm Partition Placement</label>

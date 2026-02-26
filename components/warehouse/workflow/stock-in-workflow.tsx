@@ -2,6 +2,7 @@
 
 import { useStockInStore } from "@/store/stock-in-store";
 import { StockInRequestStep } from "./stock-in-request-step";
+import { VehicleInfoStep } from "./vehicle-info-step";
 import { AllocationStep } from "./allocation-step";
 import { PutawayStep } from "./putaway-step";
 import { CompletionStep } from "./completion-step";
@@ -44,9 +45,10 @@ export function StockInWorkflow({
   // Step progress indicator
   const steps: Array<{ key: typeof currentStep; label: string; number: number }> = [
     { key: "request", label: "Request", number: 1 },
-    { key: "allocation", label: "Allocation", number: 2 },
-    { key: "putaway", label: "Putaway", number: 3 },
-    { key: "completion", label: "Completion", number: 4 },
+    { key: "vehicle", label: "Vehicle", number: 2 },
+    { key: "allocation", label: "Allocation", number: 3 },
+    { key: "putaway", label: "Putaway", number: 4 },
+    { key: "completion", label: "Completion", number: 5 },
   ];
 
   const currentStepIndex = steps.findIndex((s) => s.key === currentStep);
@@ -100,6 +102,7 @@ export function StockInWorkflow({
         {currentStep === "request" && (
           <StockInRequestStep onAddRequest={handleAddRequest} />
         )}
+        {currentStep === "vehicle" && <VehicleInfoStep />}
         {currentStep === "allocation" && <AllocationStep nodes={nodes} />}
         {currentStep === "putaway" && <PutawayStep />}
         {currentStep === "completion" && (

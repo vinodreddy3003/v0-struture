@@ -95,6 +95,39 @@ export function CompletionStep({ onWorkflowComplete }: CompletionStepProps) {
             </span>
           </div>
         </div>
+
+        {/* Vehicle Information - Tracking */}
+        {currentRequest.vehicleInfo && (
+          <div className="space-y-2">
+            <h4 className="text-xs font-semibold text-green-900">Vehicle Information</h4>
+            <div className="bg-white rounded p-2 space-y-1">
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Vehicle Number:</span>
+                <span className="font-medium text-foreground">
+                  {currentRequest.vehicleInfo.vehicleNumber}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Driver Name:</span>
+                <span className="font-medium text-foreground">
+                  {currentRequest.vehicleInfo.driverName}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Contact:</span>
+                <span className="font-medium text-foreground">
+                  {currentRequest.vehicleInfo.contactNumber}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Vehicle Type:</span>
+                <span className="font-medium text-foreground capitalize">
+                  {currentRequest.vehicleInfo.vehicleType}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Warehouse Update Confirmation */}

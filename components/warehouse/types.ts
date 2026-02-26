@@ -127,6 +127,13 @@ export interface AllocationDetail {
   allocatedQuantity: number;
 }
 
+export interface VehicleInformation {
+  vehicleNumber: string;
+  driverName: string;
+  contactNumber: string;
+  vehicleType: string;
+}
+
 export interface StockInRequest {
   id: string;
   date: string;
@@ -139,4 +146,5 @@ export interface StockInRequest {
   status: StockInRequestStatus;
   allocations: AllocationDetail[];
   notes?: string;
+  vehicleInfo?: VehicleInformation;
 }
