@@ -342,9 +342,12 @@ export function WarehouseCanvas() {
   // Handle node click: toolbar actions or select
   const onNodeClick: NodeMouseHandler = useCallback(
     (_event, node) => {
+      // In Stock In/Stock Out modes, don't allow edits or deletions - view only
+      const isDesignMode = mode === "design";
+      
       const target = _event.target as HTMLElement;
       const btn = target.closest("[data-action]") as HTMLElement | null;
-      if (btn) {
+      if (btn && isDesignMode) {
         const action = btn.dataset.action;
         const nodeId = btn.dataset.nodeId || node.id;
         switch (action) {
@@ -361,8 +364,10 @@ export function WarehouseCanvas() {
             return;
         }
       }
+      
+      // Allow selection and sidebar opening in all modes
       if (node.type === "warehouse") {
-        setIsEditingWarehouse(true);
+        setIsEditingWarehouse(isDesignMode);
         setSelectedNodeId(null);
         if (!sidebarOpen) setSidebarOpen(true);
       } else {
@@ -375,6 +380,7 @@ export function WarehouseCanvas() {
       handleDuplicate,
       handleDelete,
       sidebarOpen,
+      mode,
     ]
   );
 
@@ -391,10 +397,23 @@ export function WarehouseCanvas() {
   // Handle node resize
   const handleNodesChange = useCallback(
     (changes: Parameters<typeof onNodesChange>[0]) => {
-      onNodesChange(changes);
+      // In Stock In/Stock Out modes, filter out position and dimension changes
+      const isDesignMode = mode === "design";
+      
+      if (isDesignMode) {
+        onNodesChange(changes);
+      } else {
+        // Only allow non-positional changes in stock modes
+        const filteredChanges = changes.filter(
+          (change) => change.type !== "position" && change.type !== "dimensions"
+        );
+        if (filteredChanges.length > 0) {
+          onNodesChange(filteredChanges);
+        }
+      }
 
       for (const change of changes) {
-        if (change.type === "dimensions" && change.dimensions) {
+        if (change.type === "dimensions" && change.dimensions && isDesignMode) {
           setNodes((nds) =>
             nds.map((n) =>
               n.id === change.id
@@ -417,7 +436,7 @@ export function WarehouseCanvas() {
         }
       }
     },
-    [onNodesChange, setNodes]
+    [onNodesChange, setNodes, mode]
   );
 
   const handleCloseEdit = useCallback(() => {
@@ -611,6 +630,9 @@ export function WarehouseCanvas() {
           maxZoom={3}
           proOptions={{ hideAttribution: true }}
           className="bg-muted/30"
+          nodesDraggable={mode === "design"}
+          nodesConnectable={mode === "design"}
+          elementsSelectable={mode === "design"}
         >
           <Background gap={GRID_SIZE} size={1} color="hsl(var(--border))" />
           <Controls
