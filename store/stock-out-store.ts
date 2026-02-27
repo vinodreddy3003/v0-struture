@@ -5,6 +5,7 @@ import type { StockOutRequest, PickDetail } from "@/components/warehouse/types";
 
 export type AppMode = "design" | "stock-out";
 export type StockOutWorkflowStep = "inventory" | "select-structure" | "quantity" | "completion";
+export type UserRole = "manager" | "warehouse-staff";
 
 interface PickState {
   structureId: string;
@@ -21,6 +22,10 @@ interface StockOutStore {
   currentStep: StockOutWorkflowStep;
   currentRequestId: string | null;
   requests: StockOutRequest[];
+
+  // Manager/User state
+  currentUserRole: UserRole;
+  currentUserName: string;
 
   // Inventory step state
   availableItems: Array<{
@@ -60,6 +65,14 @@ interface StockOutStore {
   addRequest: (request: StockOutRequest) => void;
   resetWorkflow: () => void;
 
+  // Manager Actions
+  setUserRole: (role: UserRole) => void;
+  setUserName: (name: string) => void;
+  getPendingRequests: () => StockOutRequest[];
+  approveRequest: (requestId: string) => void;
+  rejectRequest: (requestId: string, reason: string) => void;
+  updateRequestStatus: (requestId: string, status: "pending" | "approved" | "rejected" | "in-progress" | "picked" | "completed") => void;
+
   // Inventory Actions
   loadAvailableItems: (items: any[]) => void;
   
@@ -86,6 +99,8 @@ export const useStockOutStore = create<StockOutStore>((set, get) => ({
   currentStep: "inventory",
   currentRequestId: null,
   requests: [],
+  currentUserRole: "warehouse-staff",
+  currentUserName: "",
   availableItems: [],
   selectedItemId: null,
   selectedItem: null,
@@ -117,6 +132,54 @@ export const useStockOutStore = create<StockOutStore>((set, get) => ({
       requestedQuantity: 0,
       verificationConfirmed: false,
     }),
+
+  // Manager Actions
+  setUserRole: (role: UserRole) => set({ currentUserRole: role }),
+
+  setUserName: (name: string) => set({ currentUserName: name }),
+
+  getPendingRequests: () => {
+    const state = get();
+    return state.requests.filter((req) => req.status === "pending");
+  },
+
+  approveRequest: (requestId: string) => {
+    set((state) => ({
+      requests: state.requests.map((req) =>
+        req.id === requestId
+          ? {
+              ...req,
+              status: "approved" as const,
+              approvedBy: state.currentUserName,
+              approvalDate: new Date().toISOString().split("T")[0],
+            }
+          : req
+      ),
+    }));
+  },
+
+  rejectRequest: (requestId: string, reason: string) => {
+    set((state) => ({
+      requests: state.requests.map((req) =>
+        req.id === requestId
+          ? {
+              ...req,
+              status: "rejected" as const,
+              rejectionReason: reason,
+              approvalDate: new Date().toISOString().split("T")[0],
+            }
+          : req
+      ),
+    }));
+  },
+
+  updateRequestStatus: (requestId: string, status: "pending" | "approved" | "rejected" | "in-progress" | "picked" | "completed") => {
+    set((state) => ({
+      requests: state.requests.map((req) =>
+        req.id === requestId ? { ...req, status } : req
+      ),
+    }));
+  },
 
   // Inventory Actions
   loadAvailableItems: (items: any[]) => set({ availableItems: items }),
@@ -160,6 +223,8 @@ export const useStockOutStore = create<StockOutStore>((set, get) => ({
           status: "completed" as const,
           picks: [],
           notes: `Picked from structure ${state.selectedStructureId}`,
+          createdBy: state.currentUserName,
+          createdDate: new Date().toISOString().split("T")[0],
         },
       ],
       currentStep: "completion",

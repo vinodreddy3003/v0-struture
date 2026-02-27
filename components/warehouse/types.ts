@@ -166,4 +166,9 @@ export interface StockOutRequest {
   status: StockOutRequestStatus;
   picks: PickDetail[];
   notes?: string;
+  createdBy: string;
+  approvedBy?: string;
+  rejectionReason?: string;
+  approvalDate?: string;
+  createdDate: string;
 }

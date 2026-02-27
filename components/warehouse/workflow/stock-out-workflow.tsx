@@ -5,7 +5,11 @@ import { InventoryStep } from "./inventory-step";
 import { LocationSelectionStep } from "./location-selection-step";
 import { QuantityEntryStep } from "./quantity-entry-step";
 import { StockOutCompletionStep } from "./stock-out-completion-step";
+import { ManagerApprovalQueue } from "./manager-approval-queue";
+import { CreateStockOutRequestForm } from "./create-stock-out-request-form";
 import type { Node } from "@xyflow/react";
+import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface StockOutWorkflowProps {
   nodes: Node[];
@@ -18,9 +22,36 @@ export function StockOutWorkflow({
   onWorkflowComplete,
   onAddRequest,
 }: StockOutWorkflowProps) {
-  const { currentStep, completeWorkflow } = useStockOutStore();
+  const { currentStep, completeWorkflow, currentUserRole } = useStockOutStore();
+  const [activeTab, setActiveTab] = useState<"create" | "approve">("create");
 
-  // Step progress indicator - 4 main steps (skip select-item)
+  // For manager workflow - show create/approve interface
+  if (currentUserRole === "manager") {
+    return (
+      <div className="space-y-4">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "create" | "approve")}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="create">Create Request</TabsTrigger>
+            <TabsTrigger value="approve">Approvals Queue</TabsTrigger>
+          </TabsList>
+          <TabsContent value="create" className="space-y-4">
+            <CreateStockOutRequestForm
+              onRequestCreated={(request) => {
+                onAddRequest?.(request);
+                setActiveTab("approve");
+              }}
+            />
+          </TabsContent>
+          <TabsContent value="approve">
+            <ManagerApprovalQueue />
+          </TabsContent>
+        </Tabs>
+      </div>
+    );
+  }
+
+  // For warehouse staff - show picking workflow (existing flow)
+  // Step progress indicator - 4 main steps
   const steps: Array<{ key: typeof currentStep; label: string; number: number }> = [
     { key: "inventory", label: "Inventory", number: 1 },
     { key: "select-structure", label: "Structure", number: 2 },

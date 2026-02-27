@@ -51,7 +51,10 @@ export function WarehouseCanvas() {
   const [isEditingWarehouse, setIsEditingWarehouse] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedPartition, setSelectedPartition] = useState<{ partition: Record<string, unknown>; structureId: string; levelId: string } | null>(null);
+  const [userRole, setUserRole] = useState<"manager" | "warehouse-staff">("warehouse-staff");
+  const [userName, setUserName] = useState("User");
   const { mode, setMode } = useStockInStore();
+  const { setUserRole: setStockOutUserRole, setUserName: setStockOutUserName } = useStockOutStore();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
   const warehouseNode = useMemo(
@@ -240,6 +243,13 @@ export function WarehouseCanvas() {
 
   const handleModeSwitch = (newMode: AppMode) => {
     setMode(newMode);
+    
+    // Sync user role and name to stock-out store when entering stock-out mode
+    if (newMode === "stock-out") {
+      setStockOutUserRole(userRole);
+      setStockOutUserName(userName);
+    }
+    
     if (newMode === "design") {
       setSelectedNodeId(null);
       setIsEditingWarehouse(false);
@@ -612,6 +622,36 @@ export function WarehouseCanvas() {
               Stock Out
             </button>
           </div>
+
+          {/* Role & User Selector (visible in stock-out mode) */}
+          {mode === "stock-out" && (
+            <div className="flex gap-2 bg-card border border-border rounded-md p-1 shadow-sm">
+              <select
+                value={userRole}
+                onChange={(e) => {
+                  const newRole = e.target.value as "manager" | "warehouse-staff";
+                  setUserRole(newRole);
+                  setStockOutUserRole(newRole);
+                }}
+                className="px-2 py-1.5 text-xs font-medium rounded border border-input bg-background text-foreground"
+                title="Select your role for stock out operations"
+              >
+                <option value="warehouse-staff">Warehouse Staff</option>
+                <option value="manager">Manager</option>
+              </select>
+              <input
+                type="text"
+                value={userName}
+                onChange={(e) => {
+                  setUserName(e.target.value);
+                  setStockOutUserName(e.target.value);
+                }}
+                placeholder="Your name"
+                className="px-2 py-1.5 text-xs rounded border border-input bg-background text-foreground placeholder:text-muted-foreground w-24"
+                title="Enter your name for request tracking"
+              />
+            </div>
+          )}
         </div>
 
         <ReactFlow
