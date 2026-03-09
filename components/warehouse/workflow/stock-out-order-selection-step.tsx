@@ -33,8 +33,32 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
     ? requests.find((r) => r.id === currentRequestId)
     : null;
 
-  // Build location data from nodes
-  const zoneStructures = useMemo(() => {
+  // Filter zones to only show those containing the requested product
+  const filteredZoneStructures = useMemo(() => {
+    if (!currentRequest) return zoneStructures;
+
+    return zoneStructures
+      .map((zs) => ({
+        ...zs,
+        structures: zs.structures
+          .map((structure) => ({
+            ...structure,
+            levels: structure.levels
+              .map((level) => ({
+                ...level,
+                partitions: level.partitions.filter(
+                  (partition) =>
+                    partition.product_name === currentRequest.productName &&
+                    partition.product_type === currentRequest.productType &&
+                    partition.max_capacity > partition.used_capacity
+                ),
+              }))
+              .filter((level) => level.partitions.length > 0),
+          }))
+          .filter((structure) => structure.levels.length > 0),
+      }))
+      .filter((zs) => zs.structures.length > 0);
+  }, [zoneStructures, currentRequest]);
     const zoneMap = new Map<string, { zone: ZoneData; structures: (StructureData & { nodeId: string })[] }>();
 
     nodes.forEach((node) => {
@@ -71,7 +95,7 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
   }, [nodes]);
 
   const selectedZone = selectedZoneId
-    ? zoneStructures.find((z) => {
+    ? filteredZoneStructures.find((z) => {
         const zoneNode = nodes.find((n) => n.id === selectedZoneId);
         return zoneNode?.id === selectedZoneId;
       })
@@ -90,7 +114,9 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
     : null;
 
   const handleSelectPartition = () => {
-    if (!selectedPartition || !selectedZone || !selectedStructure || !selectedStructureLevel) return;
+    if (!selectedPartition || !selectedZone || !selectedStructure || !selectedStructureLevel || !currentRequest) return;
+
+    const productAvailable = selectedPartition.max_capacity - selectedPartition.used_capacity;
 
     const pickingDetail = {
       structureId: selectedStructure.nodeId,
@@ -103,7 +129,10 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
       zoneName: selectedZone.zone.label,
       zoneType: selectedZone.zone.zoneType,
       pickedQuantity: 0,
-      availableQuantity: selectedPartition.max_capacity - selectedPartition.used_capacity,
+      availableQuantity: productAvailable,
+      productName: currentRequest.productName,
+      productType: currentRequest.productType,
+      productUom: currentRequest.productUOM,
     };
 
     setSelectedPickingDetail(pickingDetail);
@@ -143,38 +172,45 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
 
       {/* Zone Selection */}
       <div className="space-y-2">
-        <label className="text-sm font-medium">Select Zone</label>
-        <div className="space-y-2">
-          {zoneStructures.map((zs) => {
-            const zoneNode = nodes.find((n) => n.id === selectedZoneId);
-            const isSelected = zoneNode?.data?.label === zs.zone.label;
+        <label className="text-sm font-medium">Select Zone (Showing zones with {currentRequest.productName})</label>
+        {filteredZoneStructures.length === 0 ? (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex gap-2">
+            <AlertCircle size={16} className="text-red-700 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-red-900">Product not found in any zone</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {filteredZoneStructures.map((zs) => {
+              const zoneNode = nodes.find((n) => n.id === selectedZoneId);
+              const isSelected = zoneNode?.data?.label === zs.zone.label;
 
-            return (
-              <button
-                key={zs.zone.label}
-                onClick={() => {
-                  const zoneNodeId = nodes.find((n) => n.type === "zone" && (n.data as ZoneData).label === zs.zone.label)?.id;
-                  if (zoneNodeId) {
-                    selectZone(zoneNodeId);
-                    selectStructure(null);
-                    selectLevel(null);
-                    selectPartition(null);
-                  }
-                }}
-                className={`w-full text-left p-3 rounded-lg border-2 transition-colors ${
-                  isSelected
-                    ? "border-emerald-500 bg-emerald-50"
-                    : "border-border hover:border-emerald-300 bg-card"
-                }`}
-              >
-                <p className="text-sm font-medium">{zs.zone.label}</p>
-                <p className="text-xs text-muted-foreground">
-                  {zs.structures.length} structure{zs.structures.length !== 1 ? "s" : ""}
-                </p>
-              </button>
-            );
-          })}
-        </div>
+              return (
+                <button
+                  key={zs.zone.label}
+                  onClick={() => {
+                    const zoneNodeId = nodes.find((n) => n.type === "zone" && (n.data as ZoneData).label === zs.zone.label)?.id;
+                    if (zoneNodeId) {
+                      selectZone(zoneNodeId);
+                      selectStructure(null);
+                      selectLevel(null);
+                      selectPartition(null);
+                    }
+                  }}
+                  className={`w-full text-left p-3 rounded-lg border-2 transition-colors ${
+                    isSelected
+                      ? "border-emerald-500 bg-emerald-50"
+                      : "border-border hover:border-emerald-300 bg-card"
+                  }`}
+                >
+                  <p className="text-sm font-medium">{zs.zone.label}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {zs.structures.length} structure{zs.structures.length !== 1 ? "s" : ""} with product
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Structure Selection */}
@@ -247,38 +283,44 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
       {selectedStructureLevel && (
         <div className="space-y-2">
           <label className="text-sm font-medium">Select Partition</label>
-          <div className="space-y-2">
-            {selectedStructureLevel.partitions.map((partition) => {
-              const isSelected = selectedPartitionId === partition.id;
-              const availableInPartition = partition.max_capacity - partition.used_capacity;
+          {selectedStructureLevel.partitions.length === 0 ? (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-sm text-amber-900">No partitions with {currentRequest.productName} in this level</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {selectedStructureLevel.partitions.map((partition) => {
+                const isSelected = selectedPartitionId === partition.id;
+                const productAvailable = partition.max_capacity - partition.used_capacity;
 
-              return (
-                <button
-                  key={partition.id}
-                  onClick={() => selectPartition(partition.id)}
-                  disabled={availableInPartition <= 0}
-                  className={`w-full text-left p-3 rounded-lg border-2 transition-colors ${
-                    isSelected
-                      ? "border-emerald-500 bg-emerald-50"
-                      : availableInPartition > 0
-                        ? "border-border hover:border-emerald-300 bg-card cursor-pointer"
-                        : "border-red-200 bg-red-50 opacity-50 cursor-not-allowed"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium">{partition.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {partition.product_name && `${partition.product_name} • `}
-                        {availableInPartition} available
-                      </p>
+                return (
+                  <button
+                    key={partition.id}
+                    onClick={() => selectPartition(partition.id)}
+                    disabled={productAvailable <= 0}
+                    className={`w-full text-left p-3 rounded-lg border-2 transition-colors ${
+                      isSelected
+                        ? "border-emerald-500 bg-emerald-50"
+                        : productAvailable > 0
+                          ? "border-border hover:border-emerald-300 bg-card cursor-pointer"
+                          : "border-red-200 bg-red-50 opacity-50 cursor-not-allowed"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{partition.name}</p>
+                        <div className="text-xs text-muted-foreground space-y-1 mt-1">
+                          <p>{partition.product_name} ({partition.product_type})</p>
+                          <p>Available: {productAvailable} {partition.product_uom || "units"}</p>
+                        </div>
+                      </div>
+                      {isSelected && <ChevronRight size={16} className="text-emerald-600" />}
                     </div>
-                    {isSelected && <ChevronRight size={16} className="text-emerald-600" />}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

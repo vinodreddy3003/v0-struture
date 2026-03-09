@@ -64,6 +64,7 @@ export interface Partition {
   product_type?: string;
   product_value?: number;
   product_uom?: string;
+  product_quantity?: number; // Actual quantity of product in partition
 }
 
 export interface Level {
@@ -156,6 +157,9 @@ export interface StockOutPickingDetail {
   zoneType: ZoneType;
   pickedQuantity: number;
   availableQuantity: number;
+  productName: string;
+  productType: string;
+  productUom: string;
 }
 
 export interface StockOutRequest {

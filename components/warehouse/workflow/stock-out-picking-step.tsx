@@ -73,23 +73,21 @@ export function StockOutPickingStep({
 
     setPickedQuantity(quantity);
 
-    // Update partition inventory
+    // Update partition inventory - reduce available quantity by picked amount
     if (selectedPickingDetail && onPartitionUpdate) {
       const structureNode = nodes.find(
         (n) => n.id === selectedPickingDetail.structureId
       );
       if (structureNode) {
-        // Calculate remaining available after picking
-        const remainingAvailable = Math.max(
-          0,
-          selectedPickingDetail.availableQuantity - quantity
-        );
+        // Calculate new used capacity after picking
+        const newUsedCapacity = selectedPickingDetail.availableQuantity - (selectedPickingDetail.availableQuantity - quantity);
 
         const partitionData = {
           id: selectedPickingDetail.partitionId,
           name: selectedPickingDetail.partitionName,
-          used_capacity: selectedPickingDetail.availableQuantity - remainingAvailable,
-          max_capacity: selectedPickingDetail.availableQuantity,
+          used_capacity: newUsedCapacity,
+          max_capacity: selectedPickingDetail.availableQuantity + newUsedCapacity,
+          product_quantity: quantity, // Track actual product quantity picked
         };
 
         onPartitionUpdate(
@@ -178,23 +176,27 @@ export function StockOutPickingStep({
 
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div className="bg-muted/50 p-3 rounded">
-            <p className="text-muted-foreground text-xs font-medium mb-1">Requested</p>
-            <p className="font-semibold text-base">{currentRequest.quantity}</p>
+            <p className="text-muted-foreground text-xs font-medium mb-1">Requested Quantity</p>
+            <p className="font-semibold text-base">{currentRequest.quantity} {currentRequest.productUOM}</p>
           </div>
           <div className="bg-emerald-50 p-3 rounded border border-emerald-200">
-            <p className="text-emerald-900 text-xs font-medium mb-1">Available</p>
+            <p className="text-emerald-900 text-xs font-medium mb-1">Product Available</p>
             <p className="font-semibold text-base text-emerald-700">
-              {selectedPickingDetail.availableQuantity}
+              {selectedPickingDetail.availableQuantity} {selectedPickingDetail.productUom}
             </p>
           </div>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-200 p-3 rounded text-sm text-blue-900">
+          <p className="font-medium mb-1">{selectedPickingDetail.productName}</p>
+          <p className="text-xs">Type: {selectedPickingDetail.productType} • UOM: {selectedPickingDetail.productUom}</p>
         </div>
 
         {selectedPickingDetail.availableQuantity < currentRequest.quantity && (
           <div className="flex gap-2 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
             <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
             <p>
-              Only {selectedPickingDetail.availableQuantity} units available. You can
-              pick partial quantity.
+              Only {selectedPickingDetail.availableQuantity} {selectedPickingDetail.productUom} available. You can pick partial quantity.
             </p>
           </div>
         )}
