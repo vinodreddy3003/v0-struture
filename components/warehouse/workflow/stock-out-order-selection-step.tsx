@@ -119,7 +119,7 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
   const handleSelectPartition = () => {
     if (!selectedPartition || !selectedZone || !selectedStructure || !selectedStructureLevel || !currentRequest) return;
 
-    const productAvailable = selectedPartition.max_capacity - selectedPartition.used_capacity;
+    const actualProductQuantity = selectedPartition.product_quantity || 0;
 
     const pickingDetail = {
       structureId: selectedStructure.nodeId,
@@ -132,10 +132,11 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
       zoneName: selectedZone.zone.label,
       zoneType: selectedZone.zone.zoneType,
       pickedQuantity: 0,
-      availableQuantity: productAvailable,
+      availableQuantity: actualProductQuantity,
       productName: currentRequest.productName,
       productType: currentRequest.productType,
       productUom: currentRequest.productUOM,
+      productQuantity: actualProductQuantity,
     };
 
     setSelectedPickingDetail(pickingDetail);
@@ -153,10 +154,7 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
 
   const availableStock =
     selectedPartition && currentRequest
-      ? Math.min(
-          selectedPartition.max_capacity - selectedPartition.used_capacity,
-          currentRequest.quantity
-        )
+      ? selectedPartition.product_quantity || 0
       : 0;
 
   const canProceed = selectedPartition !== undefined && availableStock > 0;
@@ -294,17 +292,17 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
             <div className="space-y-2">
               {selectedStructureLevel.partitions.map((partition) => {
                 const isSelected = selectedPartitionId === partition.id;
-                const productAvailable = partition.max_capacity - partition.used_capacity;
+                const actualProductQuantity = partition.product_quantity || 0;
 
                 return (
                   <button
                     key={partition.id}
                     onClick={() => selectPartition(partition.id)}
-                    disabled={productAvailable <= 0}
+                    disabled={actualProductQuantity <= 0}
                     className={`w-full text-left p-3 rounded-lg border-2 transition-colors ${
                       isSelected
                         ? "border-emerald-500 bg-emerald-50"
-                        : productAvailable > 0
+                        : actualProductQuantity > 0
                           ? "border-border hover:border-emerald-300 bg-card cursor-pointer"
                           : "border-red-200 bg-red-50 opacity-50 cursor-not-allowed"
                     }`}
@@ -314,7 +312,7 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
                         <p className="text-sm font-medium">{partition.name}</p>
                         <div className="text-xs text-muted-foreground space-y-1 mt-1">
                           <p>{partition.product_name} ({partition.product_type})</p>
-                          <p>Available: {productAvailable} {partition.product_uom || "units"}</p>
+                          <p>Available: {actualProductQuantity} {partition.product_uom || "units"}</p>
                         </div>
                       </div>
                       {isSelected && <ChevronRight size={16} className="text-emerald-600" />}

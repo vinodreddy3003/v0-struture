@@ -85,21 +85,28 @@ export function StockOutPickingStep({
       );
     }
 
-    // Update partition inventory - reduce available quantity by picked amount
+    // Update partition inventory - reduce used quantity by picked amount and update product quantity
     if (selectedPickingDetail && onPartitionUpdate) {
       const structureNode = nodes.find(
         (n) => n.id === selectedPickingDetail.structureId
       );
       if (structureNode) {
-        // Calculate new used capacity after picking
-        const newUsedCapacity = selectedPickingDetail.availableQuantity - (selectedPickingDetail.availableQuantity - quantity);
+        // The partition's used_capacity should be reduced by the picked quantity
+        // This represents the space being freed up in the partition
+        const newUsedCapacity = Math.max(0, selectedPickingDetail.availableQuantity - quantity);
+        
+        // Update product quantity to reflect what remains
+        const remainingProductQuantity = Math.max(0, (selectedPickingDetail as any).productQuantity - quantity);
 
         const partitionData = {
           id: selectedPickingDetail.partitionId,
           name: selectedPickingDetail.partitionName,
           used_capacity: newUsedCapacity,
           max_capacity: selectedPickingDetail.availableQuantity + newUsedCapacity,
-          product_quantity: quantity, // Track actual product quantity picked
+          product_quantity: remainingProductQuantity,
+          product_name: selectedPickingDetail.productName,
+          product_type: selectedPickingDetail.productType,
+          product_uom: selectedPickingDetail.productUom,
         };
 
         onPartitionUpdate(

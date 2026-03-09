@@ -160,6 +160,7 @@ export interface StockOutPickingDetail {
   productName: string;
   productType: string;
   productUom: string;
+  productQuantity: number;
 }
 
 export interface StockOutRequest {
