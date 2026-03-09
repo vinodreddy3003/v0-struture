@@ -91,15 +91,18 @@ export function StockOutPickingStep({
         (n) => n.id === selectedPickingDetail.structureId
       );
       if (structureNode) {
-        // Calculate new used capacity after picking
-        const newUsedCapacity = selectedPickingDetail.availableQuantity - (selectedPickingDetail.availableQuantity - quantity);
+        // Calculate new product_quantity after picking (reduce by picked amount)
+        const newProductQuantity = Math.max(0, (selectedPickingDetail.availableQuantity || 0) - quantity);
+        
+        // Calculate new used_capacity: reduce it by the picked quantity
+        // This represents space that was occupied by the picked products
+        const newUsedCapacity = Math.max(0, selectedPickingDetail.availableQuantity - newProductQuantity);
 
         const partitionData = {
           id: selectedPickingDetail.partitionId,
           name: selectedPickingDetail.partitionName,
-          used_capacity: newUsedCapacity,
-          max_capacity: selectedPickingDetail.availableQuantity + newUsedCapacity,
-          product_quantity: quantity, // Track actual product quantity picked
+          used_capacity: selectedPickingDetail.availableQuantity - newProductQuantity,
+          product_quantity: newProductQuantity, // Track actual product quantity remaining
         };
 
         onPartitionUpdate(

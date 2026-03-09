@@ -119,7 +119,7 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
   const handleSelectPartition = () => {
     if (!selectedPartition || !selectedZone || !selectedStructure || !selectedStructureLevel || !currentRequest) return;
 
-    const productAvailable = selectedPartition.max_capacity - selectedPartition.used_capacity;
+    const productAvailable = selectedPartition.product_quantity || 0;
 
     const pickingDetail = {
       structureId: selectedStructure.nodeId,
@@ -154,7 +154,7 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
   const availableStock =
     selectedPartition && currentRequest
       ? Math.min(
-          selectedPartition.max_capacity - selectedPartition.used_capacity,
+          selectedPartition.product_quantity || 0,
           currentRequest.quantity
         )
       : 0;
@@ -314,7 +314,7 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
                         <p className="text-sm font-medium">{partition.name}</p>
                         <div className="text-xs text-muted-foreground space-y-1 mt-1">
                           <p>{partition.product_name} ({partition.product_type})</p>
-                          <p>Available: {productAvailable} {partition.product_uom || "units"}</p>
+                          <p>Product Available: {partition.product_quantity || 0} {partition.product_uom || "units"}</p>
                         </div>
                       </div>
                       {isSelected && <ChevronRight size={16} className="text-emerald-600" />}
