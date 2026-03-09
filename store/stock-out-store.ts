@@ -31,6 +31,12 @@ interface StockOutStore {
   // Picking step state
   pickedQuantity: number;
   pickingConfirmed: boolean;
+  pickingHistory: Array<{
+    partitionId: string;
+    partitionName: string;
+    quantity: number;
+    timestamp: string;
+  }>;
   
   // UI state
   highlightedZoneId: string | null;
@@ -41,6 +47,7 @@ interface StockOutStore {
   rejectRequest: (requestId: string) => void;
   startWorkflow: (requestId: string) => void;
   resetWorkflow: () => void;
+  updateRequest: (requestId: string, updates: Partial<StockOutRequest>) => void;
   
   // Form actions
   setFormData: (data: Partial<StockOutStore["formData"]>) => void;
@@ -61,6 +68,8 @@ interface StockOutStore {
   // Picking actions
   setPickedQuantity: (quantity: number) => void;
   confirmPicking: () => void;
+  addPickingHistory: (partitionId: string, partitionName: string, quantity: number) => void;
+  clearPickingHistory: () => void;
   
   // UI actions
   setHighlightedZone: (zoneId: string | null) => void;
@@ -92,6 +101,7 @@ export const useStockOutStore = create<StockOutStore>((set, get) => ({
   selectedPickingDetail: null,
   pickedQuantity: 0,
   pickingConfirmed: false,
+  pickingHistory: [],
   highlightedZoneId: null,
   
   // Request Management
@@ -143,8 +153,16 @@ export const useStockOutStore = create<StockOutStore>((set, get) => ({
       selectedPickingDetail: null,
       pickedQuantity: 0,
       pickingConfirmed: false,
+      pickingHistory: [],
       highlightedZoneId: null,
     }),
+
+  updateRequest: (requestId: string, updates: Partial<StockOutRequest>) =>
+    set((state) => ({
+      requests: state.requests.map((req) =>
+        req.id === requestId ? { ...req, ...updates } : req
+      ),
+    })),
   
   // Form actions
   setFormData: (data: Partial<StockOutStore["formData"]>) =>
@@ -195,6 +213,22 @@ export const useStockOutStore = create<StockOutStore>((set, get) => ({
   
   confirmPicking: () =>
     set({ pickingConfirmed: true, currentStep: "completion" }),
+
+  addPickingHistory: (partitionId: string, partitionName: string, quantity: number) =>
+    set((state) => ({
+      pickingHistory: [
+        ...state.pickingHistory,
+        {
+          partitionId,
+          partitionName,
+          quantity,
+          timestamp: new Date().toISOString(),
+        },
+      ],
+    })),
+
+  clearPickingHistory: () =>
+    set({ pickingHistory: [] }),
   
   // UI actions
   setHighlightedZone: (zoneId: string | null) =>

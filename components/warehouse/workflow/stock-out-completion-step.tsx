@@ -10,6 +10,7 @@ export function StockOutCompletionStep() {
     requests,
     selectedPickingDetail,
     pickedQuantity,
+    pickingHistory,
     resetWorkflow,
     setCurrentStep,
   } = useStockOutStore();
@@ -125,6 +126,30 @@ export function StockOutCompletionStep() {
           </div>
         </div>
       </div>
+
+      {/* Picking History */}
+      {pickingHistory.length > 0 && (
+        <div className="p-4 border rounded-lg bg-card space-y-3">
+          <h3 className="text-sm font-semibold">Picking History</h3>
+          <div className="space-y-2">
+            {pickingHistory.map((record, idx) => (
+              <div key={idx} className="p-3 bg-muted/50 rounded border border-border/50">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {record.partitionName}
+                  </p>
+                  <p className="text-sm font-semibold text-emerald-600">
+                    {record.quantity} {currentRequest?.productUOM}
+                  </p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(record.timestamp).toLocaleTimeString()}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Notes */}
       {currentRequest.notes && (

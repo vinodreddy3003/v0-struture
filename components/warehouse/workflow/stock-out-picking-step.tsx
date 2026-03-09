@@ -22,9 +22,12 @@ export function StockOutPickingStep({
     requests,
     selectedPickingDetail,
     pickedQuantity,
+    pickingHistory,
     setPickedQuantity,
     confirmPicking,
     completeWorkflow,
+    addPickingHistory,
+    updateRequest,
   } = useStockOutStore();
 
   const currentRequest = currentRequestId
@@ -73,6 +76,15 @@ export function StockOutPickingStep({
 
     setPickedQuantity(quantity);
 
+    // Add picking to history
+    if (selectedPickingDetail) {
+      addPickingHistory(
+        selectedPickingDetail.partitionId,
+        selectedPickingDetail.partitionName,
+        quantity
+      );
+    }
+
     // Update partition inventory - reduce available quantity by picked amount
     if (selectedPickingDetail && onPartitionUpdate) {
       const structureNode = nodes.find(
@@ -96,6 +108,14 @@ export function StockOutPickingStep({
           partitionData
         );
       }
+    }
+
+    // Update request with picking details and new status
+    if (currentRequestId) {
+      updateRequest(currentRequestId, {
+        status: "completed",
+        pickingDetails: selectedPickingDetail,
+      });
     }
 
     completeWorkflow();
