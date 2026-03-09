@@ -130,9 +130,9 @@ export function StockOutPickingStep({
 
   if (!currentRequest || !selectedPickingDetail) {
     return (
-      <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex gap-2">
-        <AlertCircle size={16} className="text-yellow-700 flex-shrink-0 mt-0.5" />
-        <p className="text-sm text-yellow-900">Missing picking information</p>
+      <div className="p-4 bg-warning-soft border border-warning rounded-lg flex gap-2">
+        <AlertCircle size={16} className="text-warning-strong flex-shrink-0 mt-0.5" />
+        <p className="text-sm text-warning-ink">Missing picking information</p>
       </div>
     );
   }
@@ -206,21 +206,21 @@ export function StockOutPickingStep({
             <p className="text-muted-foreground text-xs font-medium mb-1">Requested Quantity</p>
             <p className="font-semibold text-base">{currentRequest.quantity} {currentRequest.productUOM}</p>
           </div>
-          <div className="bg-emerald-50 p-3 rounded border border-emerald-200">
-            <p className="text-emerald-900 text-xs font-medium mb-1">Product Available</p>
-            <p className="font-semibold text-base text-emerald-700">
+          <div className="bg-success-soft-2 p-3 rounded border border-success">
+            <p className="text-success-on text-xs font-medium mb-1">Product Available</p>
+            <p className="font-semibold text-base text-success">
               {selectedPickingDetail.availableQuantity} {selectedPickingDetail.productUom}
             </p>
           </div>
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 p-3 rounded text-sm text-blue-900">
+        <div className="bg-info border border-info-ink p-3 rounded text-sm text-info-ink">
           <p className="font-medium mb-1">{selectedPickingDetail.productName}</p>
           <p className="text-xs">Type: {selectedPickingDetail.productType} • UOM: {selectedPickingDetail.productUom}</p>
         </div>
 
         {selectedPickingDetail.availableQuantity < currentRequest.quantity && (
-          <div className="flex gap-2 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
+          <div className="flex gap-2 p-3 bg-warning-soft border border-warning rounded text-sm text-warning-ink">
             <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
             <p>
               Only {selectedPickingDetail.availableQuantity} {selectedPickingDetail.productUom} available. You can pick partial quantity.
@@ -251,12 +251,12 @@ export function StockOutPickingStep({
               setConfirmQuantity(e.target.value ? parseInt(e.target.value) : "");
               setErrors("");
             }}
-            className={errors ? "border-red-500" : ""}
+            className={errors ? "border-danger" : ""}
           />
-          {errors && <p className="text-xs text-red-500">{errors}</p>}
+          {errors && <p className="text-xs text-danger">{errors}</p>}
         </div>
 
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-900">
+        <div className="p-3 bg-info border border-info-ink rounded text-sm text-info-ink">
           <p>
             Confirm that you have picked{" "}
             <span className="font-semibold">{confirmQuantity || "?"}</span>{" "}
@@ -268,7 +268,7 @@ export function StockOutPickingStep({
         <Button
           onClick={handleConfirmPicking}
           disabled={!confirmQuantity || (typeof confirmQuantity === "number" && confirmQuantity <= 0)}
-          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+          className="w-full bg-success hover:bg-success-alt text-card-foreground"
         >
           <CheckCircle2 size={16} className="mr-2" />
           Confirm Picking

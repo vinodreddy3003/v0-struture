@@ -25,11 +25,11 @@ export function StockOutApprovalStep() {
   if (currentRequest && currentRequest.status === "approved") {
     return (
       <div className="space-y-4">
-        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
-          <p className="text-sm font-medium text-emerald-900">
+        <div className="p-4 bg-success-soft-2 border border-success rounded-lg">
+          <p className="text-sm font-medium text-success-on">
             ✓ Request {currentRequest.orderReference} approved
           </p>
-          <p className="text-xs text-emerald-800 mt-1">
+          <p className="text-xs text-success-on mt-1 opacity-90">
             Proceeding to order selection...
           </p>
         </div>
@@ -40,8 +40,8 @@ export function StockOutApprovalStep() {
   return (
     <div className="space-y-4">
       {/* Instructions */}
-      <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-        <p className="text-sm text-blue-900">
+      <div className="p-3 bg-info rounded-md border border-info-ink">
+        <p className="text-sm text-info-ink">
           Review and approve pending stock out requests below.
         </p>
       </div>

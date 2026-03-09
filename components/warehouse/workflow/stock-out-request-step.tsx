@@ -84,7 +84,7 @@ export function StockOutRequestStep() {
             className={errors.orderReference ? "border-red-500" : ""}
           />
           {errors.orderReference && (
-            <p className="text-xs text-red-500">{errors.orderReference}</p>
+            <p className="text-xs text-danger">{errors.orderReference}</p>
           )}
         </div>
 
@@ -97,10 +97,10 @@ export function StockOutRequestStep() {
             placeholder="e.g., Widget A"
             value={formData.productName}
             onChange={(e) => setFormData({ productName: e.target.value })}
-            className={errors.productName ? "border-red-500" : ""}
+            className={errors.productName ? "border-danger" : ""}
           />
           {errors.productName && (
-            <p className="text-xs text-red-500">{errors.productName}</p>
+            <p className="text-xs text-danger">{errors.productName}</p>
           )}
         </div>
 
@@ -114,10 +114,10 @@ export function StockOutRequestStep() {
               placeholder="e.g., Electronics"
               value={formData.productType}
               onChange={(e) => setFormData({ productType: e.target.value })}
-              className={errors.productType ? "border-red-500" : ""}
+              className={errors.productType ? "border-danger" : ""}
             />
             {errors.productType && (
-              <p className="text-xs text-red-500">{errors.productType}</p>
+              <p className="text-xs text-danger">{errors.productType}</p>
             )}
           </div>
 
@@ -130,10 +130,10 @@ export function StockOutRequestStep() {
               placeholder="e.g., Pieces"
               value={formData.productUOM}
               onChange={(e) => setFormData({ productUOM: e.target.value })}
-              className={errors.productUOM ? "border-red-500" : ""}
+              className={errors.productUOM ? "border-danger" : ""}
             />
             {errors.productUOM && (
-              <p className="text-xs text-red-500">{errors.productUOM}</p>
+              <p className="text-xs text-danger">{errors.productUOM}</p>
             )}
           </div>
         </div>
@@ -151,10 +151,10 @@ export function StockOutRequestStep() {
             onChange={(e) =>
               setFormData({ quantity: parseInt(e.target.value) || 0 })
             }
-            className={errors.quantity ? "border-red-500" : ""}
+            className={errors.quantity ? "border-danger" : ""}
           />
           {errors.quantity && (
-            <p className="text-xs text-red-500">{errors.quantity}</p>
+            <p className="text-xs text-danger">{errors.quantity}</p>
           )}
         </div>
 
@@ -173,7 +173,7 @@ export function StockOutRequestStep() {
 
         <Button
           type="submit"
-          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+          className="w-full bg-success hover:bg-success-alt text-card-foreground"
         >
           <Plus size={16} className="mr-2" />
           Create Request

@@ -145,9 +145,9 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
 
   if (!currentRequest) {
     return (
-      <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex gap-2">
-        <AlertCircle size={16} className="text-yellow-700 flex-shrink-0 mt-0.5" />
-        <p className="text-sm text-yellow-900">No active request found</p>
+      <div className="p-4 bg-warning-soft border border-warning rounded-lg flex gap-2">
+        <AlertCircle size={16} className="text-warning-strong flex-shrink-0 mt-0.5" />
+        <p className="text-sm text-warning-ink">No active request found</p>
       </div>
     );
   }
@@ -162,11 +162,11 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
   return (
     <div className="space-y-4">
       {/* Request Summary */}
-      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-sm font-medium text-blue-900">
+      <div className="p-3 bg-info rounded-lg border border-info-ink">
+        <p className="text-sm font-medium text-info-ink">
           {currentRequest.orderReference}
         </p>
-        <p className="text-xs text-blue-800 mt-1">
+        <p className="text-xs text-info-ink mt-1 opacity-90">
           Need to pick: <span className="font-semibold">{currentRequest.quantity} {currentRequest.productUOM}</span>
         </p>
       </div>
@@ -175,9 +175,9 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
       <div className="space-y-2">
         <label className="text-sm font-medium">Select Zone (Showing zones with {currentRequest.productName})</label>
         {filteredZoneStructures.length === 0 ? (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex gap-2">
-            <AlertCircle size={16} className="text-red-700 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-900">Product not found in any zone</p>
+          <div className="p-3 bg-danger rounded-lg flex gap-2">
+            <AlertCircle size={16} className="text-card-foreground flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-card-foreground">Product not found in any zone</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -199,8 +199,8 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
                   }}
                   className={`w-full text-left p-3 rounded-lg border-2 transition-colors ${
                     isSelected
-                      ? "border-emerald-500 bg-emerald-50"
-                      : "border-border hover:border-emerald-300 bg-card"
+                      ? "border-success bg-success-soft-2"
+                      : "border-border hover:border-success-muted bg-card"
                   }`}
                 >
                   <p className="text-sm font-medium">{zs.zone.label}</p>
@@ -231,8 +231,8 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
                   }}
                   className={`w-full text-left p-3 rounded-lg border-2 transition-colors ${
                     isSelected
-                      ? "border-emerald-500 bg-emerald-50"
-                      : "border-border hover:border-emerald-300 bg-card"
+                      ? "border-success bg-success-soft-2"
+                      : "border-border hover:border-success-muted bg-card"
                   }`}
                 >
                   <p className="text-sm font-medium">{structure.label}</p>
@@ -265,8 +265,8 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
                   }}
                   className={`w-full text-left p-3 rounded-lg border-2 transition-colors ${
                     isSelected
-                      ? "border-emerald-500 bg-emerald-50"
-                      : "border-border hover:border-emerald-300 bg-card"
+                      ? "border-success bg-success-soft-2"
+                      : "border-border hover:border-success-muted bg-card"
                   }`}
                 >
                   <p className="text-sm font-medium">{level.name}</p>
@@ -285,8 +285,8 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
         <div className="space-y-2">
           <label className="text-sm font-medium">Select Partition</label>
           {selectedStructureLevel.partitions.length === 0 ? (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-              <p className="text-sm text-amber-900">No partitions with {currentRequest.productName} in this level</p>
+            <div className="p-3 bg-warning-soft border border-warning rounded-lg">
+              <p className="text-sm text-warning-ink">No partitions with {currentRequest.productName} in this level</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -301,10 +301,10 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
                     disabled={actualProductQuantity <= 0}
                     className={`w-full text-left p-3 rounded-lg border-2 transition-colors ${
                       isSelected
-                        ? "border-emerald-500 bg-emerald-50"
+                        ? "border-success bg-success-soft-2"
                         : actualProductQuantity > 0
-                          ? "border-border hover:border-emerald-300 bg-card cursor-pointer"
-                          : "border-red-200 bg-red-50 opacity-50 cursor-not-allowed"
+                          ? "border-border hover:border-success-muted bg-card cursor-pointer"
+                          : "border-danger bg-danger opacity-50 cursor-not-allowed"
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -315,7 +315,7 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
                           <p>Available: {actualProductQuantity} {partition.product_uom || "units"}</p>
                         </div>
                       </div>
-                      {isSelected && <ChevronRight size={16} className="text-emerald-600" />}
+                      {isSelected && <ChevronRight size={16} className="text-success" />}
                     </div>
                   </button>
                 );
@@ -347,7 +347,7 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
           </div>
 
           {availableStock < currentRequest.quantity && (
-            <div className="text-xs text-amber-700 bg-amber-50 p-2 rounded">
+            <div className="text-xs text-warning-ink bg-warning-soft p-2 rounded">
               Available stock ({availableStock}) is less than requested ({currentRequest.quantity})
             </div>
           )}
@@ -355,7 +355,7 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
           <Button
             onClick={handleSelectPartition}
             disabled={!canProceed}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+            className="w-full bg-success hover:bg-success-alt text-card-foreground"
           >
             Proceed to Picking
           </Button>
