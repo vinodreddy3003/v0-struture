@@ -5,7 +5,6 @@ import { StockOutRequestStep } from "./stock-out-request-step";
 import { StockOutApprovalStep } from "./stock-out-approval-step";
 import { StockOutOrderSelectionStep } from "./stock-out-order-selection-step";
 import { StockOutPickingStep } from "./stock-out-picking-step";
-import { StockOutCompletionStep } from "./stock-out-completion-step";
 import { Stepper } from "@/components/warehouse/stepper";
 import type { Node } from "@xyflow/react";
 
@@ -19,7 +18,6 @@ const STEPS = [
   { id: "approval", label: "Approval" },
   { id: "order-selection", label: "Order Selection" },
   { id: "picking", label: "Picking" },
-  { id: "completion", label: "Completion" },
 ];
 
 export function StockOutWorkflow({ nodes, onPartitionUpdate }: StockOutWorkflowProps) {
@@ -50,7 +48,6 @@ export function StockOutWorkflow({ nodes, onPartitionUpdate }: StockOutWorkflowP
             onPartitionUpdate={onPartitionUpdate}
           />
         )}
-        {currentStep === "completion" && <StockOutCompletionStep />}
       </div>
     </div>
   );

@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import type { StockOutRequest, StockOutPickingDetail } from "@/components/warehouse/types";
 
-export type StockOutWorkflowStep = "request" | "approval" | "order-selection" | "picking" | "completion";
+export type StockOutWorkflowStep = "request" | "approval" | "order-selection" | "picking";
 
 interface StockOutStore {
   // Workflow state
@@ -87,7 +87,7 @@ const defaultFormData = {
   notes: "",
 };
 
-const WORKFLOW_STEPS: StockOutWorkflowStep[] = ["request", "approval", "order-selection", "picking", "completion"];
+const WORKFLOW_STEPS: StockOutWorkflowStep[] = ["request", "approval", "order-selection", "picking"];
 
 export const useStockOutStore = create<StockOutStore>((set, get) => ({
   currentStep: "request",
@@ -212,7 +212,7 @@ export const useStockOutStore = create<StockOutStore>((set, get) => ({
     set({ pickedQuantity: Math.max(0, quantity) }),
   
   confirmPicking: () =>
-    set({ pickingConfirmed: true, currentStep: "completion" }),
+    set({ pickingConfirmed: true }),
 
   addPickingHistory: (partitionId: string, partitionName: string, quantity: number) =>
     set((state) => ({
@@ -244,7 +244,6 @@ export const useStockOutStore = create<StockOutStore>((set, get) => ({
             ? { ...req, status: "completed", pickingDetails: state.selectedPickingDetail }
             : req
         ),
-        currentStep: "completion",
       }));
     }
   },
