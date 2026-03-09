@@ -110,6 +110,11 @@ export function SidePanel({
   const [showStructureForm, setShowStructureForm] = useState(false);
   const [selectedZoneForStructure, setSelectedZoneForStructure] = useState<string>("");
 
+  // Toggle section open/close
+  const toggleSection = (section: SidebarSection) => {
+    setOpenSection(openSection === section ? null : section);
+  };
+
   // Stock In mode state is now managed by workflow orchestrator - no local state needed
 
   const isEditing =
