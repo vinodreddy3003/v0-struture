@@ -33,32 +33,8 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
     ? requests.find((r) => r.id === currentRequestId)
     : null;
 
-  // Filter zones to only show those containing the requested product
+  // Build zone structures from nodes and filter to only show those containing the requested product
   const filteredZoneStructures = useMemo(() => {
-    if (!currentRequest) return zoneStructures;
-
-    return zoneStructures
-      .map((zs) => ({
-        ...zs,
-        structures: zs.structures
-          .map((structure) => ({
-            ...structure,
-            levels: structure.levels
-              .map((level) => ({
-                ...level,
-                partitions: level.partitions.filter(
-                  (partition) =>
-                    partition.product_name === currentRequest.productName &&
-                    partition.product_type === currentRequest.productType &&
-                    partition.max_capacity > partition.used_capacity
-                ),
-              }))
-              .filter((level) => level.partitions.length > 0),
-          }))
-          .filter((structure) => structure.levels.length > 0),
-      }))
-      .filter((zs) => zs.structures.length > 0);
-  }, [zoneStructures, currentRequest]);
     const zoneMap = new Map<string, { zone: ZoneData; structures: (StructureData & { nodeId: string })[] }>();
 
     nodes.forEach((node) => {
@@ -91,8 +67,35 @@ export function StockOutOrderSelectionStep({ nodes }: StockOutOrderSelectionStep
       }
     });
 
-    return Array.from(zoneMap.values());
-  }, [nodes]);
+    let zoneStructures = Array.from(zoneMap.values());
+
+    // Filter zones to only show those containing the requested product
+    if (currentRequest) {
+      zoneStructures = zoneStructures
+        .map((zs) => ({
+          ...zs,
+          structures: zs.structures
+            .map((structure) => ({
+              ...structure,
+              levels: structure.levels
+                .map((level) => ({
+                  ...level,
+                  partitions: level.partitions.filter(
+                    (partition) =>
+                      partition.product_name === currentRequest.productName &&
+                      partition.product_type === currentRequest.productType &&
+                      partition.max_capacity > partition.used_capacity
+                  ),
+                }))
+                .filter((level) => level.partitions.length > 0),
+            }))
+            .filter((structure) => structure.levels.length > 0),
+        }))
+        .filter((zs) => zs.structures.length > 0);
+    }
+
+    return zoneStructures;
+  }, [nodes, currentRequest]);
 
   const selectedZone = selectedZoneId
     ? filteredZoneStructures.find((z) => {
