@@ -11,6 +11,7 @@ import {
   Download,
   Upload,
   Layers,
+  PackageOpen,
 } from "lucide-react";
 import { useState } from "react";
 import { WarehouseForm } from "./forms/warehouse-form";
@@ -20,6 +21,7 @@ import { PartitionForm } from "./forms/partition-form";
 import { NodeEditForm } from "./forms/node-edit-form";
 import { StockInForm } from "./forms/stock-in-form";
 import { StockInWorkflow } from "./workflow/stock-in-workflow";
+import { StockOutWorkflow } from "./workflow/stock-out-workflow";
 import type {
   WarehouseData,
   ElementData,
@@ -34,7 +36,7 @@ type SidebarSection = "elements" | "zones" | "structures" | "settings" | null;
 
 interface SidePanelProps {
   isOpen: boolean;
-  mode: "design" | "stock-in";
+  mode: "design" | "stock-in" | "stock-out";
   warehouseExists: boolean;
   warehouseData: WarehouseData | null;
   selectedNode: Node | null;
@@ -126,12 +128,14 @@ export function SidePanel({
     >
       <div className="flex items-center gap-2 border-b border-border px-4 py-3">
         {mode === "stock-in" ? (
-          <PackageIcon size={18} className="text-emerald-600" />
+          <PackageOpen size={18} className="text-emerald-600" />
+        ) : mode === "stock-out" ? (
+          <PackageOpen size={18} className="text-blue-600" />
         ) : (
           <Warehouse size={18} className="text-primary" />
         )}
         <h2 className="text-sm font-bold text-card-foreground">
-          {mode === "stock-in" ? "Stock In" : "Layout Designer"}
+          {mode === "stock-in" ? "Stock In" : mode === "stock-out" ? "Stock Out" : "Layout Designer"}
         </h2>
       </div>
 
@@ -527,6 +531,16 @@ export function SidePanel({
                 // Called when workflow completes to update partitions
                 // The callback will be used to update warehouse canvas
               }}
+            />
+          </div>
+        )}
+
+        {/* STOCK OUT MODE */}
+        {mode === "stock-out" && (
+          <div className="p-4">
+            <StockOutWorkflow
+              nodes={nodes || []}
+              onPartitionUpdate={onPartitionUpdate}
             />
           </div>
         )}
