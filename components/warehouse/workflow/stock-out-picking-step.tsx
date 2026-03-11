@@ -2,232 +2,237 @@
 
 import { useState } from "react";
 import { useStockOutStore } from "@/store/stock-out-store";
-import { Trash2, Check } from "lucide-react";
+import { CheckCircle2, Package } from "lucide-react";
+import { PartitionLevelVisualization } from "@/components/warehouse/panels/partition-level-visualization";
+import type { Partition } from "@/components/warehouse/types";
+
+interface PartitionPickingDetail {
+  partition: Partition;
+  pickedQuantity: number;
+  availableQuantity: number;
+}
 
 export function StockOutPickingStep() {
   const {
+    currentRequest,
     availableLocations,
     pickingAllocations,
     totalPickedQuantity,
-    selectedRequestId,
-    requests,
-    addPickingAllocation,
-    updatePickedQuantity,
-    removePickingAllocation,
+    setCurrentStep,
     confirmPicking,
   } = useStockOutStore();
 
-  const selectedRequest = requests.find((req) => req.id === selectedRequestId);
-  const [error, setError] = useState("");
+  const [confirmedPickings, setConfirmedPickings] = useState<Set<string>>(
+    new Set()
+  );
 
-  const handleAddLocation = (locationId: string, location: (typeof availableLocations)[0]) => {
-    const existingAllocation = pickingAllocations.find((a) => a.locationId === locationId);
-    if (!existingAllocation) {
-      addPickingAllocation({
-        locationId,
-        location,
-        pickedQuantity: 0,
+  if (!currentRequest) return null;
+
+  // Transform available locations into partition details
+  const getPickingDetails = (): PartitionPickingDetail[] => {
+    return availableLocations.map((location) => {
+      const allocation = pickingAllocations.find(
+        (a) => a.locationId === `${location.structureId}-${location.levelId}-${location.partitionId}`
+      );
+
+      return {
+        partition: {
+          id: location.partitionId,
+          name: location.partitionName,
+          code: `${location.partitionId.substring(0, 3).toUpperCase()}`,
+          width: 1,
+          max_capacity: location.availableQuantity,
+          used_capacity: allocation?.pickedQuantity || 0,
+          product_name: currentRequest.productName,
+          product_type: currentRequest.productType,
+          product_uom: currentRequest.uom,
+        },
+        pickedQuantity: allocation?.pickedQuantity || 0,
+        availableQuantity: location.availableQuantity,
+      };
+    });
+  };
+
+  const toggleConfirmed = (partitionId: string) => {
+    const newSet = new Set(confirmedPickings);
+    if (newSet.has(partitionId)) {
+      newSet.delete(partitionId);
+    } else {
+      newSet.add(partitionId);
+    }
+    setConfirmedPickings(newSet);
+  };
+
+  const allConfirmed = pickingAllocations.every((a) =>
+    confirmedPickings.has(a.location.partitionId)
+  );
+
+  const handleConfirmAndComplete = () => {
+    // Dispatch partition updates for visual confirmation
+    pickingAllocations.forEach((alloc) => {
+      const event = new CustomEvent("partition-picked", {
+        detail: {
+          structureId: alloc.location.structureId,
+          levelId: alloc.location.levelId,
+          partition: {
+            id: alloc.location.partitionId,
+            name: alloc.location.partitionName,
+            code: `${alloc.location.partitionId.substring(0, 3).toUpperCase()}`,
+            width: 1,
+            max_capacity: alloc.location.availableQuantity,
+            used_capacity: alloc.pickedQuantity,
+            product_name: currentRequest.productName,
+            product_type: currentRequest.productType,
+            product_uom: currentRequest.uom,
+          },
+        },
       });
-    }
-  };
-
-  const handleQuantityChange = (locationId: string, quantity: number) => {
-    setError("");
-    const location = availableLocations.find((l) =>
-      l.partitionId === locationId
-    );
-    
-    if (location && quantity > location.availableQuantity) {
-      setError(`Quantity cannot exceed available quantity (${location.availableQuantity})`);
-      return;
-    }
-
-    updatePickedQuantity(locationId, quantity);
-  };
-
-  const handleConfirm = () => {
-    setError("");
-
-    if (pickingAllocations.length === 0) {
-      setError("Please add at least one picking location");
-      return;
-    }
-
-    if (totalPickedQuantity === 0) {
-      setError("Please pick at least one unit");
-      return;
-    }
-
-    if (!selectedRequest || totalPickedQuantity > selectedRequest.quantity) {
-      setError("Picked quantity cannot exceed requested quantity");
-      return;
-    }
+      window.dispatchEvent(event);
+    });
 
     confirmPicking();
   };
 
-  const remainingToPick = selectedRequest
-    ? Math.max(0, selectedRequest.quantity - totalPickedQuantity)
-    : 0;
-
-  const progressPercentage = selectedRequest
-    ? (totalPickedQuantity / selectedRequest.quantity) * 100
-    : 0;
+  const pickingDetails = getPickingDetails();
+  const progressPercentage = (totalPickedQuantity / currentRequest.quantity) * 100;
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-foreground">Confirm Picking Order</h2>
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="border-b border-border pb-3">
+        <h3 className="text-sm font-semibold text-foreground">Confirm Picking Order</h3>
+        <p className="text-xs text-muted-foreground mt-1">
+          Confirm physical picking of stock from selected locations
+        </p>
+      </div>
 
-      {/* Product Information */}
-      {selectedRequest && (
-        <div className="p-4 bg-background border border-border rounded-lg">
-          <h3 className="text-sm font-semibold text-foreground mb-3">Product to Pick</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">Product Name</p>
-              <p className="text-sm font-semibold text-foreground">{selectedRequest.productName}</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">Type</p>
-              <p className="text-sm font-semibold text-foreground">{selectedRequest.productType}</p>
-            </div>
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">Requested Quantity</p>
-              <p className="text-sm font-semibold text-foreground">
-                {selectedRequest.quantity} {selectedRequest.uom}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">Vendor</p>
-              <p className="text-sm font-semibold text-foreground">{selectedRequest.vendor}</p>
+      {/* Product Info */}
+      <div className="border border-border rounded-lg p-3 bg-muted/30">
+        <div className="flex items-start gap-3">
+          <Package className="text-blue-600 mt-1 flex-shrink-0" size={20} />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground">
+              {currentRequest.productName}
+            </p>
+            <div className="text-xs text-muted-foreground space-y-0.5 mt-1">
+              <p>Type: {currentRequest.productType}</p>
+              <p>Total Quantity: {currentRequest.quantity} {currentRequest.uom}</p>
+              <p>Vendor: {currentRequest.vendor}</p>
             </div>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Progress Bar */}
-      <div className="space-y-2">
+      {/* Picking Progress */}
+      <div className="space-y-2 bg-background border border-border rounded-lg p-3">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-foreground">Picking Progress</span>
-          <span className="text-sm font-semibold text-foreground">
-            {totalPickedQuantity} / {selectedRequest?.quantity} {selectedRequest?.uom}
+          <span className="text-xs font-medium text-foreground">Picking Progress</span>
+          <span className="text-xs font-semibold text-foreground">
+            {totalPickedQuantity} / {currentRequest.quantity} {currentRequest.uom}
           </span>
         </div>
-        <div className="h-3 bg-muted rounded-full overflow-hidden border border-border">
+        <div className="h-2 bg-muted rounded-full overflow-hidden">
           <div
             className="h-full bg-blue-600 transition-all duration-300"
             style={{ width: `${Math.min(progressPercentage, 100)}%` }}
           />
         </div>
-        {remainingToPick > 0 && (
-          <p className="text-xs text-muted-foreground">
-            Remaining: {remainingToPick} {selectedRequest?.uom}
-          </p>
-        )}
       </div>
 
-      {/* Available Locations */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-foreground">Select From Available Locations</h3>
-        <div className="space-y-2 max-h-[300px] overflow-y-auto border border-border rounded-lg p-3 bg-background">
-          {availableLocations.map((location) => {
-            const allocation = pickingAllocations.find((a) => a.locationId === location.partitionId);
-            const isSelected = !!allocation;
-
-            return (
+      {/* Partition Level Visualization */}
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-foreground">Confirm Picking from Locations</label>
+        <div className="border border-border rounded-lg p-3 space-y-3 max-h-96 overflow-y-auto bg-muted/10">
+          {pickingDetails.length > 0 ? (
+            pickingDetails.map((detail) => (
               <div
-                key={location.partitionId}
-                className={`p-3 border rounded-md transition-colors ${
-                  isSelected ? "bg-blue-50 border-blue-200" : "bg-background border-border hover:bg-muted/30"
+                key={detail.partition.id}
+                className={`border-2 rounded-lg p-3 transition-all cursor-pointer ${
+                  confirmedPickings.has(detail.partition.id)
+                    ? "border-green-500 bg-green-50"
+                    : "border-border bg-background hover:bg-muted/50"
                 }`}
+                onClick={() => toggleConfirmed(detail.partition.id)}
               >
-                <div className="flex items-start justify-between gap-3 mb-2">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-foreground">{location.partitionName}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {location.zoneName} → {location.structureName} → {location.levelName}
-                    </p>
+                <div className="flex items-start gap-3">
+                  {/* Checkbox */}
+                  <div
+                    className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors mt-1 ${
+                      confirmedPickings.has(detail.partition.id)
+                        ? "border-green-600 bg-green-50"
+                        : "border-border bg-background"
+                    }`}
+                  >
+                    {confirmedPickings.has(detail.partition.id) && (
+                      <CheckCircle2 size={16} className="text-green-600" />
+                    )}
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs font-medium text-muted-foreground mb-1">Available</p>
-                    <p className="text-sm font-semibold text-foreground">{location.availableQuantity}</p>
+
+                  {/* Partition Visualization */}
+                  <div className="flex-1 min-w-0">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-xs font-semibold text-foreground">
+                        Picking {detail.pickedQuantity} units from {detail.partition.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        Available: {detail.availableQuantity}
+                      </span>
+                    </div>
+                    <PartitionLevelVisualization
+                      partition={detail.partition}
+                      isAllocated={confirmedPickings.has(detail.partition.id)}
+                    />
                   </div>
                 </div>
-
-                {isSelected ? (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min="0"
-                      max={location.availableQuantity}
-                      value={allocation?.pickedQuantity || 0}
-                      onChange={(e) =>
-                        handleQuantityChange(location.partitionId, parseFloat(e.target.value) || 0)
-                      }
-                      placeholder="0"
-                      className="flex-1 px-2 py-1.5 text-sm border border-border rounded-md bg-white text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <button
-                      onClick={() => removePickingAllocation(location.partitionId)}
-                      className="p-1.5 text-destructive hover:bg-destructive/10 rounded-md transition-colors"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => handleAddLocation(location.partitionId, location)}
-                    className="w-full px-2 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors"
-                  >
-                    Add from this location
-                  </button>
-                )}
               </div>
-            );
-          })}
+            ))
+          ) : (
+            <div className="p-4 text-center bg-muted/20 rounded-lg">
+              <p className="text-xs text-muted-foreground">
+                No locations selected. Go back to select picking locations.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Selected Pickings Summary */}
-      {pickingAllocations.length > 0 && (
-        <div className="p-4 bg-background border border-border rounded-lg space-y-2">
-          <h3 className="text-sm font-semibold text-foreground mb-3">Picking Summary</h3>
-          {pickingAllocations.map((allocation) => (
-            <div key={allocation.locationId} className="flex items-center justify-between text-sm">
-              <span className="text-foreground">{allocation.location.partitionName}</span>
-              <span className="font-semibold text-foreground">
-                {allocation.pickedQuantity} {selectedRequest?.uom}
-              </span>
-            </div>
-          ))}
-          <div className="pt-2 border-t border-border mt-2">
-            <div className="flex items-center justify-between text-sm font-semibold">
-              <span className="text-foreground">Total Picked</span>
-              <span className="text-blue-600">
-                {totalPickedQuantity} {selectedRequest?.uom}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Instructions */}
+      <div className="border-l-4 border-blue-500 bg-blue-50 p-3 rounded">
+        <p className="text-xs text-blue-900">
+          Click on each location to confirm physical picking. Hover over partitions to see product name and quantity information.
+        </p>
+      </div>
 
-      {/* Error Message */}
-      {error && (
-        <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md border border-destructive/20">
-          {error}
+      {/* Confirmation Counter */}
+      <div className="bg-background border border-border rounded-lg p-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-foreground">Confirmation Progress</span>
+          <span className="text-xs font-semibold text-foreground">
+            {confirmedPickings.size} / {pickingAllocations.length} locations confirmed
+          </span>
         </div>
-      )}
+      </div>
 
-      {/* Confirm Button */}
-      <button
-        onClick={handleConfirm}
-        className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors"
-      >
-        <Check size={18} />
-        Confirm Picking
-      </button>
+      {/* Action Buttons */}
+      <div className="flex gap-2 pt-3 border-t border-border">
+        <button
+          onClick={() => setCurrentStep("zone-selection")}
+          className="flex-1 px-3 py-1.5 text-xs font-medium rounded bg-muted text-foreground hover:bg-muted/80 transition-colors"
+        >
+          Back to Location
+        </button>
+        <button
+          onClick={handleConfirmAndComplete}
+          disabled={!allConfirmed || pickingAllocations.length === 0}
+          className={`flex-1 px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+            allConfirmed && pickingAllocations.length > 0
+              ? "bg-green-600 text-white hover:bg-green-700"
+              : "bg-muted text-muted-foreground cursor-not-allowed"
+          }`}
+        >
+          Confirm & Complete
+        </button>
+      </div>
     </div>
   );
 }
