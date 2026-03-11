@@ -38,7 +38,7 @@ export function StockOutZoneSelectionStep({ nodes = [] }: StockOutZoneSelectionS
       ? nodes.filter(
           (n) =>
             n.type === "structure" &&
-            (n.data as StructureData).parentZoneId === selectedZoneId
+            n.parentId === selectedZoneId
         )
       : [];
   }, [nodes, selectedZoneId]);
@@ -130,6 +130,10 @@ export function StockOutZoneSelectionStep({ nodes = [] }: StockOutZoneSelectionS
                 key={zone.id}
                 onClick={() => {
                   selectZone(zone.id === selectedZoneId ? null : zone.id);
+                  setExpandedStructures(new Set());
+                  setExpandedLevels(new Set());
+                  setSelectedPartitionId("");
+                  setQuantityToPick("");
                 }}
                 className={`px-2 py-1.5 text-xs rounded border transition-colors ${
                   selectedZoneId === zone.id
@@ -149,7 +153,7 @@ export function StockOutZoneSelectionStep({ nodes = [] }: StockOutZoneSelectionS
       </div>
 
       {/* Structures and Partitions */}
-      {(selectedZoneId || structures.length > 0) && structures.length > 0 && (
+      {(selectedZoneId || structures.length > 0) && (
         <div className="space-y-2 max-h-96 overflow-y-auto border border-border rounded-lg p-2">
           {structures.map((structure) => {
             const data = structure.data as StructureData;
