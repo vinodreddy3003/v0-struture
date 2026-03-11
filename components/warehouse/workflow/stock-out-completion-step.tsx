@@ -1,41 +1,46 @@
 "use client";
 
 import { useStockOutStore } from "@/store/stock-out-store";
-import { CheckCircle, Download } from "lucide-react";
+import { CheckCircle, Download, TrendingDown } from "lucide-react";
 
 export function StockOutCompletionStep() {
-  const { selectedRequestId, requests, pickingAllocations, resetWorkflow } = useStockOutStore();
+  const { currentRequest, pickingAllocations, resetWorkflow } = useStockOutStore();
 
-  const selectedRequest = requests.find((req) => req.id === selectedRequestId);
+  if (!currentRequest) return null;
 
   const handleDownloadSummary = () => {
-    if (!selectedRequest || pickingAllocations.length === 0) return;
+    if (!currentRequest || pickingAllocations.length === 0) return;
+
+    const totalPicked = pickingAllocations.reduce((sum, a) => sum + a.pickedQuantity, 0);
 
     const summary = `
 STOCK OUT COMPLETION SUMMARY
 ========================================
 Date: ${new Date().toLocaleString()}
-Request ID: ${selectedRequest.id}
+Request ID: ${currentRequest.id}
 
 PRODUCT INFORMATION:
-  Product Name: ${selectedRequest.productName}
-  Product Type: ${selectedRequest.productType}
-  Vendor: ${selectedRequest.vendor}
-  Product Value: $${selectedRequest.productValue.toFixed(2)}
-  UOM: ${selectedRequest.uom}
+  Product Name: ${currentRequest.productName}
+  Product Type: ${currentRequest.productType}
+  Vendor: ${currentRequest.vendor}
+  Product Value: $${currentRequest.productValue.toFixed(2)}
+  UOM: ${currentRequest.uom}
 
 REQUESTED vs PICKED:
-  Requested Quantity: ${selectedRequest.quantity} ${selectedRequest.uom}
-  Total Picked: ${pickingAllocations.reduce((sum, a) => sum + a.pickedQuantity, 0)} ${selectedRequest.uom}
+  Requested Quantity: ${currentRequest.quantity} ${currentRequest.uom}
+  Total Picked: ${totalPicked} ${currentRequest.uom}
 
-PICKING DETAILS:
+PICKING DETAILS & REMAINING QUANTITIES:
 ${pickingAllocations
-  .map(
-    (alloc) => `
+  .map((alloc) => {
+    const remaining = Math.max(0, alloc.location.availableQuantity - alloc.pickedQuantity);
+    return `
   Location: ${alloc.location.zoneName} / ${alloc.location.structureName} / ${alloc.location.levelName} / ${alloc.location.partitionName}
-  Picked Quantity: ${alloc.pickedQuantity} ${selectedRequest.uom}
-`
-  )
+  Available: ${alloc.location.availableQuantity} ${currentRequest.uom}
+  Picked: ${alloc.pickedQuantity} ${currentRequest.uom}
+  Remaining: ${remaining} ${currentRequest.uom}
+`;
+  })
   .join("")}
 
 Status: COMPLETED
@@ -44,7 +49,7 @@ Status: COMPLETED
 
     const element = document.createElement("a");
     element.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(summary));
-    element.setAttribute("download", `stock-out-${selectedRequest.id}.txt`);
+    element.setAttribute("download", `stock-out-${currentRequest.id}.txt`);
     element.style.display = "none";
     document.body.appendChild(element);
     element.click();
@@ -54,112 +59,140 @@ Status: COMPLETED
   const totalPicked = pickingAllocations.reduce((sum, a) => sum + a.pickedQuantity, 0);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col items-center justify-center py-8 px-4">
-        <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
-          <CheckCircle className="w-8 h-8 text-green-600" />
+    <div className="space-y-4">
+      {/* Success Header */}
+      <div className="border-b border-border pb-3">
+        <div className="flex items-center gap-2 mb-2">
+          <CheckCircle className="text-green-600" size={24} />
+          <h3 className="text-sm font-semibold text-foreground">Stock Out Completed</h3>
         </div>
-        <h2 className="text-2xl font-bold text-foreground mb-2">Stock Out Complete!</h2>
-        <p className="text-center text-muted-foreground">
-          Your stock out workflow has been successfully completed.
+        <p className="text-xs text-muted-foreground">
+          All picking has been confirmed and warehouse inventory updated
         </p>
       </div>
 
-      {/* Summary Card */}
-      {selectedRequest && (
-        <div className="p-6 bg-gradient-to-br from-green-50 to-blue-50 border-2 border-green-200 rounded-lg space-y-4">
-          <h3 className="text-lg font-semibold text-foreground">Workflow Summary</h3>
-
-          {/* Product Details */}
-          <div className="grid grid-cols-2 gap-4 pb-4 border-b border-green-200">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">Product Name</p>
-              <p className="text-sm font-semibold text-foreground">{selectedRequest.productName}</p>
+      {/* Completion Summary */}
+      <div className="border border-green-200 bg-green-50 rounded-lg p-4 space-y-3">
+        {/* Product Summary */}
+        <div className="space-y-2">
+          <h4 className="text-xs font-semibold text-green-900">Product Details</h4>
+          <div className="bg-white rounded p-2 space-y-1">
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">Product:</span>
+              <span className="font-medium text-foreground">{currentRequest.productName}</span>
             </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">Product Type</p>
-              <p className="text-sm font-semibold text-foreground">{selectedRequest.productType}</p>
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">Type:</span>
+              <span className="font-medium text-foreground">{currentRequest.productType}</span>
             </div>
-          </div>
-
-          {/* Quantity Details */}
-          <div className="grid grid-cols-2 gap-4 pb-4 border-b border-green-200">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">Requested Quantity</p>
-              <p className="text-lg font-bold text-foreground">
-                {selectedRequest.quantity} {selectedRequest.uom}
-              </p>
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">Requested Quantity:</span>
+              <span className="font-medium text-foreground">
+                {currentRequest.quantity} {currentRequest.uom}
+              </span>
             </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">Total Picked</p>
-              <p className="text-lg font-bold text-green-600">
-                {totalPicked} {selectedRequest.uom}
-              </p>
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">Total Picked:</span>
+              <span className="font-medium text-green-700 font-bold">{totalPicked} {currentRequest.uom}</span>
             </div>
-          </div>
-
-          {/* Vendor & Value */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">Vendor</p>
-              <p className="text-sm font-semibold text-foreground">{selectedRequest.vendor}</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">Product Value</p>
-              <p className="text-sm font-semibold text-foreground">
-                ${selectedRequest.productValue.toFixed(2)}
-              </p>
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">Vendor:</span>
+              <span className="font-medium text-foreground">{currentRequest.vendor}</span>
             </div>
           </div>
         </div>
-      )}
 
-      {/* Picking Details */}
-      <div className="p-4 bg-background border border-border rounded-lg space-y-3">
-        <h3 className="text-sm font-semibold text-foreground">Picking Details</h3>
-        <div className="space-y-2 max-h-[300px] overflow-y-auto">
-          {pickingAllocations.map((allocation, idx) => (
-            <div key={allocation.locationId} className="p-3 bg-muted/30 rounded-md border border-border">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">
-                    {idx + 1}. {allocation.location.partitionName}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {allocation.location.zoneName} → {allocation.location.structureName} →{" "}
-                    {allocation.location.levelName}
-                  </p>
+        {/* Picking Summary with Remaining Quantities */}
+        <div className="space-y-2">
+          <h4 className="text-xs font-semibold text-green-900">Picking & Remaining Inventory</h4>
+          <div className="bg-white rounded p-2 space-y-1 max-h-48 overflow-y-auto">
+            {pickingAllocations.map((alloc, idx) => {
+              const remaining = Math.max(0, alloc.location.availableQuantity - alloc.pickedQuantity);
+              return (
+                <div key={alloc.locationId} className="border-b border-gray-100 pb-2 last:border-b-0">
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="font-medium text-foreground">
+                      {idx + 1}. {alloc.location.partitionName}
+                    </span>
+                    <span className="text-muted-foreground text-xs">
+                      {alloc.location.zoneName} → {alloc.location.structureName}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 ml-3">
+                    <div className="text-xs">
+                      <span className="text-muted-foreground">Available:</span>
+                      <p className="font-medium text-foreground">{alloc.location.availableQuantity}</p>
+                    </div>
+                    <div className="text-xs">
+                      <span className="text-muted-foreground">Picked:</span>
+                      <p className="font-medium text-green-700">-{alloc.pickedQuantity}</p>
+                    </div>
+                    <div className="text-xs">
+                      <span className="text-muted-foreground">Remaining:</span>
+                      <p className="font-medium text-foreground">{remaining}</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Picked Quantity</p>
-                  <p className="text-sm font-bold text-green-600">
-                    {allocation.pickedQuantity} {selectedRequest?.uom}
-                  </p>
-                </div>
-              </div>
+              );
+            })}
+            <div className="border-t border-gray-200 pt-2 mt-2 flex items-center justify-between">
+              <span className="font-semibold text-foreground text-xs">Total Picked:</span>
+              <span className="font-bold text-green-700 text-xs">{totalPicked} units</span>
             </div>
-          ))}
+          </div>
+        </div>
+
+        {/* Status */}
+        <div className="bg-white rounded p-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">Request Status:</span>
+            <span className="px-2 py-1 text-xs font-bold rounded bg-green-100 text-green-800">
+              COMPLETED
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Status */}
-      <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
-        <div className="w-2.5 h-2.5 rounded-full bg-green-600" />
-        Status: Completed
+      {/* Warehouse Update Confirmation */}
+      <div className="border border-blue-200 bg-blue-50 rounded-lg p-3 flex gap-3">
+        <TrendingDown className="text-blue-600 flex-shrink-0" size={20} />
+        <p className="text-xs text-blue-900">
+          Partition inventory has been automatically reduced in the warehouse layout. 
+          The remaining quantities are now visible in the canvas.
+        </p>
+      </div>
+
+      {/* Next Steps */}
+      <div className="space-y-2">
+        <h4 className="text-xs font-medium text-foreground">Next Steps</h4>
+        <ul className="text-xs text-muted-foreground space-y-1">
+          <li className="flex items-center gap-2">
+            <TrendingDown size={12} className="flex-shrink-0" />
+            Monitor partition inventory in warehouse view
+          </li>
+          <li className="flex items-center gap-2">
+            <TrendingDown size={12} className="flex-shrink-0" />
+            Process additional stock out requests as needed
+          </li>
+          <li className="flex items-center gap-2">
+            <TrendingDown size={12} className="flex-shrink-0" />
+            Generate reports from completed transactions
+          </li>
+        </ul>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-3 pt-4 border-t border-border">
+      <div className="flex gap-2 pt-3 border-t border-border">
         <button
           onClick={handleDownloadSummary}
-          className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors"
+          className="flex-1 px-4 py-2 text-xs font-semibold rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
         >
-          <Download size={18} />
+          <Download size={14} className="inline mr-2" />
           Download Summary
         </button>
         <button
           onClick={resetWorkflow}
-          className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
+          className="flex-1 px-4 py-2 text-xs font-semibold rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors"
         >
           New Request
         </button>

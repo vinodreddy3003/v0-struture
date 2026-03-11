@@ -68,9 +68,11 @@ export function StockOutPickingStep() {
   );
 
   const handleConfirmAndComplete = () => {
-    // Dispatch partition updates for visual confirmation
+    // Dispatch partition updates to warehouse canvas to reduce quantities
     pickingAllocations.forEach((alloc) => {
-      const event = new CustomEvent("partition-picked", {
+      const remainingQuantity = Math.max(0, alloc.location.availableQuantity - alloc.pickedQuantity);
+      
+      const event = new CustomEvent("partition-updated", {
         detail: {
           structureId: alloc.location.structureId,
           levelId: alloc.location.levelId,
@@ -80,7 +82,7 @@ export function StockOutPickingStep() {
             code: `${alloc.location.partitionId.substring(0, 3).toUpperCase()}`,
             width: 1,
             max_capacity: alloc.location.availableQuantity,
-            used_capacity: alloc.pickedQuantity,
+            used_capacity: remainingQuantity,
             product_name: currentRequest.productName,
             product_type: currentRequest.productType,
             product_uom: currentRequest.uom,
