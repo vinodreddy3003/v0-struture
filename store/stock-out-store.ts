@@ -81,6 +81,7 @@ interface StockOutStore {
   addPickingAllocation: (allocation: PickingAllocation) => void;
   updatePickedQuantity: (locationId: string, quantity: number) => void;
   removePickingAllocation: (locationId: string) => void;
+  updateLocationQuantitiesAfterPicking: () => void;
   confirmPicking: () => void;
   completeWorkflow: () => void;
 }
@@ -223,8 +224,48 @@ export const useStockOutStore = create<StockOutStore>((set, get) => ({
       };
     }),
   
+  // Update availableLocations with reduced quantities after picking
+  updateLocationQuantitiesAfterPicking: () =>
+    set((state) => {
+      const updatedLocations = state.availableLocations.map((location) => {
+        const allocation = state.pickingAllocations.find(
+          (a) => a.locationId === `${location.structureId}-${location.levelId}-${location.partitionId}`
+        );
+        
+        if (allocation) {
+          return {
+            ...location,
+            availableQuantity: Math.max(0, location.availableQuantity - allocation.pickedQuantity),
+          };
+        }
+        return location;
+      });
+      
+      return { availableLocations: updatedLocations };
+    }),
+  
   confirmPicking: () => {
-    set({ currentStep: "completion" });
+    set((state) => {
+      // Update location quantities
+      const updatedLocations = state.availableLocations.map((location) => {
+        const allocation = state.pickingAllocations.find(
+          (a) => a.locationId === `${location.structureId}-${location.levelId}-${location.partitionId}`
+        );
+        
+        if (allocation) {
+          return {
+            ...location,
+            availableQuantity: Math.max(0, location.availableQuantity - allocation.pickedQuantity),
+          };
+        }
+        return location;
+      });
+      
+      return { 
+        availableLocations: updatedLocations,
+        currentStep: "completion" 
+      };
+    });
   },
   
   completeWorkflow: () => {

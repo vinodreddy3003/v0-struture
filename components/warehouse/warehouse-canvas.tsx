@@ -495,6 +495,9 @@ export function WarehouseCanvas() {
           return node;
         })
       );
+      
+      // Clear selectedPartition to force UI re-render with updated data
+      setSelectedPartition(null);
     };
 
     window.addEventListener("partition-selected", handlePartitionSelected);
