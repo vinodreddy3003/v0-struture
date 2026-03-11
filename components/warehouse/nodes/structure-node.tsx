@@ -24,6 +24,19 @@ function StructureNodeComponent({ id, data, selected }: StructureNodeProps) {
     return "#ef4444"; // red
   };
 
+  const getStructureBackgroundColor = (): string => {
+    // Calculate overall structure fill percentage
+    const fillPercentage = (data.used_capacity / data.max_capacity) * 100;
+    
+    // If structure is empty (0% used), use a light gray to indicate empty state
+    if (fillPercentage === 0) {
+      return "#f3f4f6"; // light gray for empty
+    }
+    
+    // Otherwise use the original color
+    return data.color;
+  };
+
   const handlePartitionClick = (partition: Partition, levelId: string) => {
     // Dispatch custom event to notify warehouse-canvas of partition selection
     const event = new CustomEvent("partition-selected", {
@@ -99,9 +112,9 @@ function StructureNodeComponent({ id, data, selected }: StructureNodeProps) {
         </button>
       </NodeToolbar>
       <div
-        className="flex h-full w-full flex-col overflow-hidden rounded-md border-2"
+        className="flex h-full w-full flex-col overflow-hidden rounded-md border-2 transition-colors duration-300"
         style={{
-          backgroundColor: data.color,
+          backgroundColor: getStructureBackgroundColor(),
           borderColor: selected ? "#2563EB" : "rgba(0,0,0,0.15)",
         }}
       >
