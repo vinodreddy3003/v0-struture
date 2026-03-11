@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useStockOutStore, type PickingLocation } from "@/store/stock-out-store";
-import { ChevronRight, MapPin } from "lucide-react";
+import { ChevronRight, MapPin, AlertCircle } from "lucide-react";
+import type { Node } from "@xyflow/react";
+import type { ZoneData, StructureData, Level, Partition } from "@/components/warehouse/types";
 
 interface Zone {
   id: string;
@@ -16,69 +18,11 @@ interface Structure {
   levels?: Level[];
 }
 
-interface Level {
-  id: string;
-  name: string;
-  partitions?: Partition[];
+interface StockOutZoneSelectionStepProps {
+  nodes?: Node[];
 }
 
-interface Partition {
-  id: string;
-  name: string;
-  availableQuantity: number;
-}
-
-// Mock data - in real app, this would come from props or context
-const MOCK_ZONES: Zone[] = [
-  {
-    id: "zone-1",
-    name: "Zone A - Raw Materials",
-    structures: [
-      {
-        id: "struct-1",
-        name: "Structure 1",
-        levels: [
-          {
-            id: "level-1",
-            name: "Level 1",
-            partitions: [
-              { id: "part-1", name: "Partition 1A", availableQuantity: 50 },
-              { id: "part-2", name: "Partition 1B", availableQuantity: 30 },
-            ],
-          },
-          {
-            id: "level-2",
-            name: "Level 2",
-            partitions: [
-              { id: "part-3", name: "Partition 2A", availableQuantity: 20 },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "zone-2",
-    name: "Zone B - Finished Goods",
-    structures: [
-      {
-        id: "struct-2",
-        name: "Structure 2",
-        levels: [
-          {
-            id: "level-3",
-            name: "Level 1",
-            partitions: [
-              { id: "part-4", name: "Partition 1A", availableQuantity: 100 },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-];
-
-export function StockOutZoneSelectionStep() {
+export function StockOutZoneSelectionStep({ nodes = [] }: StockOutZoneSelectionStepProps) {
   const {
     selectedZoneId,
     selectedStructureId,
@@ -90,13 +34,52 @@ export function StockOutZoneSelectionStep() {
     setAvailableLocations,
   } = useStockOutStore();
 
-  const [expandedZone, setExpandedZone] = useState<string | null>(selectedZoneId || MOCK_ZONES[0]?.id);
+  // Transform nodes into zone hierarchy
+  const zones = useMemo(() => {
+    const zoneList: Zone[] = [];
+
+    // Get zone nodes
+    const zoneNodes = nodes.filter((n) => n.type === "zone");
+
+    zoneNodes.forEach((zoneNode) => {
+      const zoneData = zoneNode.data as ZoneData;
+      const structures: Structure[] = [];
+
+      // Get structures within this zone
+      const structureNodes = nodes.filter(
+        (n) => n.type === "structure" && n.data && (n.data as StructureData).parentZoneId === zoneNode.id
+      );
+
+      structureNodes.forEach((structureNode) => {
+        const structureData = structureNode.data as StructureData;
+        structures.push({
+          id: structureNode.id,
+          name: structureData.label,
+          levels: structureData.levels || [],
+        });
+      });
+
+      zoneList.push({
+        id: zoneNode.id,
+        name: zoneData.label,
+        structures,
+      });
+    });
+
+    return zoneList;
+  }, [nodes]);
+
+  const [expandedZone, setExpandedZone] = useState<string | null>(selectedZoneId || zones[0]?.id || null);
   const [expandedStructure, setExpandedStructure] = useState<string | null>(selectedStructureId);
   const [expandedLevel, setExpandedLevel] = useState<string | null>(selectedLevelId);
 
-  const currentZone = MOCK_ZONES.find((z) => z.id === expandedZone);
+  const currentZone = zones.find((z) => z.id === expandedZone);
   const currentStructure = currentZone?.structures?.find((s) => s.id === expandedStructure);
   const currentLevel = currentStructure?.levels?.find((l) => l.id === expandedLevel);
+
+  // Check if warehouse is configured
+  const hasWarehouse = nodes.some((n) => n.type === "warehouse");
+  const hasZones = zones.length > 0;
 
   const handleZoneSelect = (zoneId: string) => {
     selectZone(zoneId);
@@ -117,26 +100,25 @@ export function StockOutZoneSelectionStep() {
   };
 
   const handleConfirmLocation = () => {
-    if (!expandedZone || !expandedStructure || !expandedLevel) {
+    if (!expandedZone || !expandedStructure || !expandedLevel || !currentLevel) {
       return;
     }
 
     // Create picking locations from available partitions
-    const zone = MOCK_ZONES.find((z) => z.id === expandedZone);
+    const zone = zones.find((z) => z.id === expandedZone);
     const structure = zone?.structures?.find((s) => s.id === expandedStructure);
-    const level = structure?.levels?.find((l) => l.id === expandedLevel);
 
-    if (level?.partitions) {
-      const locations: PickingLocation[] = level.partitions.map((partition) => ({
+    if (currentLevel.partitions && currentLevel.partitions.length > 0) {
+      const locations: PickingLocation[] = currentLevel.partitions.map((partition) => ({
         zoneId: expandedZone,
         zoneName: zone?.name || "",
         structureId: expandedStructure,
         structureName: structure?.name || "",
         levelId: expandedLevel,
-        levelName: level.name,
+        levelName: currentLevel.name,
         partitionId: partition.id,
         partitionName: partition.name,
-        availableQuantity: partition.availableQuantity,
+        availableQuantity: partition.used_capacity || 0, // Use current stock as available
       }));
 
       setAvailableLocations(locations);
@@ -145,6 +127,36 @@ export function StockOutZoneSelectionStep() {
   };
 
   const isLocationSelected = expandedZone && expandedStructure && expandedLevel;
+
+  if (!hasWarehouse) {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-xl font-semibold text-foreground">Select Warehouse Location</h2>
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex gap-3">
+          <AlertCircle className="text-amber-600 flex-shrink-0" size={20} />
+          <div className="text-sm text-amber-900">
+            <p className="font-semibold mb-1">No warehouse configured</p>
+            <p>Create a warehouse design first to select locations for picking.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasZones) {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-xl font-semibold text-foreground">Select Warehouse Location</h2>
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex gap-3">
+          <AlertCircle className="text-amber-600 flex-shrink-0" size={20} />
+          <div className="text-sm text-amber-900">
+            <p className="font-semibold mb-1">No zones available</p>
+            <p>Create zones and structures in design mode to select picking locations.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -158,7 +170,7 @@ export function StockOutZoneSelectionStep() {
             Zones
           </h3>
           <div className="space-y-2 border border-border rounded-lg p-3 bg-background">
-            {MOCK_ZONES.map((zone) => (
+            {zones.map((zone) => (
               <button
                 key={zone.id}
                 onClick={() => handleZoneSelect(zone.id)}
@@ -178,7 +190,7 @@ export function StockOutZoneSelectionStep() {
         <div className="space-y-2">
           <h3 className="text-sm font-semibold text-foreground">Structures</h3>
           <div className="space-y-2 border border-border rounded-lg p-3 bg-background min-h-[200px]">
-            {currentZone?.structures ? (
+            {currentZone?.structures && currentZone.structures.length > 0 ? (
               currentZone.structures.map((structure) => (
                 <button
                   key={structure.id}
@@ -202,7 +214,7 @@ export function StockOutZoneSelectionStep() {
         <div className="space-y-2">
           <h3 className="text-sm font-semibold text-foreground">Levels</h3>
           <div className="space-y-2 border border-border rounded-lg p-3 bg-background min-h-[200px]">
-            {currentStructure?.levels ? (
+            {currentStructure?.levels && currentStructure.levels.length > 0 ? (
               currentStructure.levels.map((level) => (
                 <button
                   key={level.id}
@@ -240,11 +252,11 @@ export function StockOutZoneSelectionStep() {
             <p className="mt-2">
               <span className="font-medium">Available Partitions:</span> {currentLevel.partitions?.length || 0}
             </p>
-            {currentLevel.partitions && (
+            {currentLevel.partitions && currentLevel.partitions.length > 0 && (
               <ul className="mt-2 space-y-1 pl-4 list-disc">
                 {currentLevel.partitions.map((part) => (
                   <li key={part.id}>
-                    {part.name} - {part.availableQuantity} units
+                    {part.name} - {part.used_capacity || 0} units
                   </li>
                 ))}
               </ul>

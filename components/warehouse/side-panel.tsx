@@ -542,7 +542,7 @@ export function SidePanel({
         {/* STOCK OUT MODE */}
         {mode === "stock-out" && (
           <div className="p-4">
-            <StockOutWorkflow />
+            <StockOutWorkflow nodes={nodes} />
           </div>
         )}
       </div>

@@ -6,8 +6,13 @@ import { StockOutZoneSelectionStep } from "./stock-out-zone-selection-step";
 import { StockOutPickingStep } from "./stock-out-picking-step";
 import { StockOutCompletionStep } from "./stock-out-completion-step";
 import { ChevronLeft } from "lucide-react";
+import type { Node } from "@xyflow/react";
 
-export function StockOutWorkflow() {
+interface StockOutWorkflowProps {
+  nodes?: Node[];
+}
+
+export function StockOutWorkflow({ nodes = [] }: StockOutWorkflowProps) {
   const { currentStep, setCurrentStep, resetWorkflow, requests } = useStockOutStore();
 
   // Step configuration
@@ -104,7 +109,7 @@ export function StockOutWorkflow() {
             onReject={() => {}}
           />
         )}
-        {currentStep === "zone-selection" && <StockOutZoneSelectionStep />}
+        {currentStep === "zone-selection" && <StockOutZoneSelectionStep nodes={nodes} />}
         {currentStep === "picking" && <StockOutPickingStep />}
         {currentStep === "completion" && <StockOutCompletionStep />}
       </div>
