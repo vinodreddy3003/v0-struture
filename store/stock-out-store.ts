@@ -40,6 +40,7 @@ interface StockOutStore {
   // Workflow State
   currentStep: WorkflowStep;
   currentRequestId: string | null;
+  currentRequest: StockOutRequest | null;
   requests: StockOutRequest[];
   
   // Approval step state
@@ -87,6 +88,7 @@ interface StockOutStore {
 export const useStockOutStore = create<StockOutStore>((set, get) => ({
   currentStep: "request",
   currentRequestId: null,
+  currentRequest: null,
   requests: [],
   selectedRequestId: null,
   selectedZoneId: null,
@@ -102,6 +104,8 @@ export const useStockOutStore = create<StockOutStore>((set, get) => ({
   addRequest: (request: StockOutRequest) =>
     set((state) => ({
       requests: [...state.requests, request],
+      currentRequest: request,
+      currentRequestId: request.id,
     })),
   
   approveRequest: (requestId: string) =>
