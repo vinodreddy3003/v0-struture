@@ -72,21 +72,30 @@ export function StockOutPickingStep() {
     pickingAllocations.forEach((alloc) => {
       const remainingQuantity = Math.max(0, alloc.location.availableQuantity - alloc.pickedQuantity);
       
+      // Clear product data if remaining quantity is zero
+      const partitionData = {
+        id: alloc.location.partitionId,
+        name: alloc.location.partitionName,
+        code: `${alloc.location.partitionId.substring(0, 3).toUpperCase()}`,
+        width: 1,
+        max_capacity: alloc.location.availableQuantity,
+        used_capacity: remainingQuantity,
+      };
+      
+      // Only add product info if remaining quantity is greater than zero
+      if (remainingQuantity > 0) {
+        Object.assign(partitionData, {
+          product_name: currentRequest.productName,
+          product_type: currentRequest.productType,
+          product_uom: currentRequest.uom,
+        });
+      }
+      
       const event = new CustomEvent("partition-updated", {
         detail: {
           structureId: alloc.location.structureId,
           levelId: alloc.location.levelId,
-          partition: {
-            id: alloc.location.partitionId,
-            name: alloc.location.partitionName,
-            code: `${alloc.location.partitionId.substring(0, 3).toUpperCase()}`,
-            width: 1,
-            max_capacity: alloc.location.availableQuantity,
-            used_capacity: remainingQuantity,
-            product_name: currentRequest.productName,
-            product_type: currentRequest.productType,
-            product_uom: currentRequest.uom,
-          },
+          partition: partitionData,
         },
       });
       window.dispatchEvent(event);
