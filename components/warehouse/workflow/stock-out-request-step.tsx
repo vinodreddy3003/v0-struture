@@ -6,10 +6,11 @@ import type { StockOutRequest } from "@/store/stock-out-store";
 import { Check, X } from "lucide-react";
 
 interface StockOutRequestStepProps {
-  onRequestCreated?: (request: StockOutRequest) => void;
+  onApprove?: (request: StockOutRequest) => void;
+  onReject?: () => void;
 }
 
-export function StockOutRequestStep({ onRequestCreated }: StockOutRequestStepProps) {
+export function StockOutRequestStep({ onApprove, onReject }: StockOutRequestStepProps) {
   const { addRequest } = useStockOutStore();
   
   const [productName, setProductName] = useState("");
@@ -20,13 +21,14 @@ export function StockOutRequestStep({ onRequestCreated }: StockOutRequestStepPro
   const [vendor, setVendor] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [formSubmitted, setFormSubmitted] = useState(false);
+  const [currentRequest, setCurrentRequest] = useState<StockOutRequest | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    if (!productName || !productType || !quantity || !productValue || !uom || !vendor) {
+    if (!productName.trim() || !productType.trim() || !quantity || !productValue || !uom.trim() || !vendor.trim()) {
       setError("All fields except notes are required");
       return;
     }
@@ -46,59 +48,141 @@ export function StockOutRequestStep({ onRequestCreated }: StockOutRequestStepPro
 
     const newRequest: StockOutRequest = {
       id: `stock-out-${Date.now()}`,
-      productName,
-      productType,
+      productName: productName.trim(),
+      productType: productType.trim(),
       quantity: qty,
       productValue: value,
-      uom,
-      vendor,
-      notes: notes || undefined,
+      uom: uom.trim(),
+      vendor: vendor.trim(),
+      notes: notes.trim() || undefined,
       status: "pending",
       createdAt: new Date().toISOString(),
     };
 
-    addRequest(newRequest);
-    onRequestCreated?.(newRequest);
-
-    setSubmitted(true);
-    setTimeout(() => {
-      setProductName("");
-      setProductType("");
-      setQuantity("");
-      setProductValue("");
-      setUom("");
-      setVendor("");
-      setNotes("");
-      setSubmitted(false);
-    }, 2000);
+    setCurrentRequest(newRequest);
+    setFormSubmitted(true);
   };
 
-  if (submitted) {
+  const handleApprove = () => {
+    if (!currentRequest) return;
+
+    const approvedRequest: StockOutRequest = {
+      ...currentRequest,
+      status: "approved",
+    };
+
+    addRequest(approvedRequest);
+    onApprove?.(approvedRequest);
+
+    // Reset form
+    setProductName("");
+    setProductType("");
+    setQuantity("");
+    setProductValue("");
+    setUom("");
+    setVendor("");
+    setNotes("");
+    setFormSubmitted(false);
+    setCurrentRequest(null);
+  };
+
+  const handleReject = () => {
+    setProductName("");
+    setProductType("");
+    setQuantity("");
+    setProductValue("");
+    setUom("");
+    setVendor("");
+    setNotes("");
+    setError("");
+    setFormSubmitted(false);
+    setCurrentRequest(null);
+    onReject?.();
+  };
+
+  // Show request details for approval
+  if (formSubmitted && currentRequest) {
     return (
-      <div className="flex flex-col items-center justify-center py-8 px-4">
-        <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-4">
-          <Check className="w-6 h-6 text-green-600" />
+      <div className="max-w-2xl mx-auto">
+        <h2 className="text-xl font-semibold text-foreground mb-6">Review Stock Out Request</h2>
+        
+        <div className="space-y-6">
+          {/* Request Details */}
+          <div className="p-4 bg-background border border-border rounded-lg space-y-4">
+            <h3 className="text-sm font-semibold text-foreground">Product Information</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Product Name</p>
+                <p className="text-sm font-medium text-foreground">{currentRequest.productName}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Product Type</p>
+                <p className="text-sm font-medium text-foreground">{currentRequest.productType}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Quantity</p>
+                <p className="text-sm font-medium text-foreground">{currentRequest.quantity}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">UOM</p>
+                <p className="text-sm font-medium text-foreground">{currentRequest.uom}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Product Value</p>
+                <p className="text-sm font-medium text-foreground">${currentRequest.productValue.toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Vendor</p>
+                <p className="text-sm font-medium text-foreground">{currentRequest.vendor}</p>
+              </div>
+            </div>
+
+            {currentRequest.notes && (
+              <div className="border-t border-border pt-4">
+                <p className="text-xs text-muted-foreground mb-2">Notes</p>
+                <p className="text-sm text-foreground bg-muted p-2 rounded border border-border">
+                  {currentRequest.notes}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <button
+              onClick={handleApprove}
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors"
+            >
+              <Check size={18} />
+              Approve Request
+            </button>
+            <button
+              onClick={handleReject}
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors"
+            >
+              <X size={18} />
+              Reject Request
+            </button>
+          </div>
         </div>
-        <h3 className="text-lg font-semibold text-foreground mb-2">Stock Out Request Created</h3>
-        <p className="text-sm text-muted-foreground text-center">
-          Your request has been successfully submitted for approval.
-        </p>
       </div>
     );
   }
 
+  // Show form for creating request
   return (
     <div className="max-w-2xl mx-auto">
-      <h2 className="text-xl font-semibold text-foreground mb-6">Create Stock Out Request</h2>
+      <h2 className="text-xl font-semibold text-foreground mb-6">Stock Out Request & Approval</h2>
       
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleFormSubmit} className="space-y-6">
         {/* Product Information Section */}
         <div className="space-y-4 p-4 bg-background border border-border rounded-lg">
           <h3 className="text-sm font-semibold text-foreground">Product Information</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-foreground">Product Name *</label>
+              <label className="text-sm font-medium text-foreground">Product Name</label>
               <input
                 type="text"
                 value={productName}
@@ -109,7 +193,7 @@ export function StockOutRequestStep({ onRequestCreated }: StockOutRequestStepPro
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-foreground">Product Type *</label>
+              <label className="text-sm font-medium text-foreground">Product Type</label>
               <input
                 type="text"
                 value={productType}
@@ -122,7 +206,7 @@ export function StockOutRequestStep({ onRequestCreated }: StockOutRequestStepPro
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-foreground">Quantity *</label>
+              <label className="text-sm font-medium text-foreground">Quantity</label>
               <input
                 type="number"
                 step="0.01"
@@ -134,7 +218,7 @@ export function StockOutRequestStep({ onRequestCreated }: StockOutRequestStepPro
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-foreground">Product Value *</label>
+              <label className="text-sm font-medium text-foreground">Product Value</label>
               <input
                 type="number"
                 step="0.01"
@@ -148,7 +232,7 @@ export function StockOutRequestStep({ onRequestCreated }: StockOutRequestStepPro
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-foreground">UOM *</label>
+              <label className="text-sm font-medium text-foreground">UOM</label>
               <input
                 type="text"
                 value={uom}
@@ -159,7 +243,7 @@ export function StockOutRequestStep({ onRequestCreated }: StockOutRequestStepPro
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-foreground">Vendor *</label>
+              <label className="text-sm font-medium text-foreground">Vendor</label>
               <input
                 type="text"
                 value={vendor}
@@ -173,7 +257,7 @@ export function StockOutRequestStep({ onRequestCreated }: StockOutRequestStepPro
 
         {/* Notes Section */}
         <div className="space-y-2 p-4 bg-background border border-border rounded-lg">
-          <label className="text-sm font-medium text-foreground">Notes</label>
+          <label className="text-sm font-medium text-foreground">Note</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}

@@ -3,7 +3,7 @@
 import { create } from "zustand";
 
 export type StockOutStatus = "pending" | "approved" | "rejected" | "picking" | "completed";
-export type WorkflowStep = "request" | "approval" | "zone-selection" | "picking" | "completion";
+export type WorkflowStep = "request" | "zone-selection" | "picking" | "completion";
 
 export interface StockOutRequest {
   id: string;
@@ -126,7 +126,7 @@ export const useStockOutStore = create<StockOutStore>((set, get) => ({
   startApprovalFlow: (requestId: string) => {
     set({
       selectedRequestId: requestId,
-      currentStep: "approval",
+      currentStep: "zone-selection",
     });
   },
   

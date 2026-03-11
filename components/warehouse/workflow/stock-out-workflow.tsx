@@ -2,7 +2,6 @@
 
 import { useStockOutStore } from "@/store/stock-out-store";
 import { StockOutRequestStep } from "./stock-out-request-step";
-import { StockOutApprovalStep } from "./stock-out-approval-step";
 import { StockOutZoneSelectionStep } from "./stock-out-zone-selection-step";
 import { StockOutPickingStep } from "./stock-out-picking-step";
 import { StockOutCompletionStep } from "./stock-out-completion-step";
@@ -13,11 +12,10 @@ export function StockOutWorkflow() {
 
   // Step configuration
   const steps = [
-    { key: "request", label: "Request", number: 1 },
-    { key: "approval", label: "Approval", number: 2 },
-    { key: "zone-selection", label: "Location", number: 3 },
-    { key: "picking", label: "Picking", number: 4 },
-    { key: "completion", label: "Completion", number: 5 },
+    { key: "request", label: "Request & Approval", number: 1 },
+    { key: "zone-selection", label: "Location", number: 2 },
+    { key: "picking", label: "Picking", number: 3 },
+    { key: "completion", label: "Completion", number: 4 },
   ] as const;
 
   const currentStepIndex = steps.findIndex((s) => s.key === currentStep);
@@ -25,9 +23,7 @@ export function StockOutWorkflow() {
   const handleBack = () => {
     if (currentStep === "request") return;
 
-    if (currentStep === "approval") {
-      setCurrentStep("request");
-    } else if (currentStep === "zone-selection") {
+    if (currentStep === "zone-selection") {
       setCurrentStep("request");
     } else if (currentStep === "picking") {
       setCurrentStep("zone-selection");
@@ -102,8 +98,12 @@ export function StockOutWorkflow() {
 
       {/* Step Content */}
       <div className="border border-border rounded-lg p-6 bg-background min-h-[500px]">
-        {currentStep === "request" && <StockOutRequestStep />}
-        {currentStep === "approval" && <StockOutApprovalStep />}
+        {currentStep === "request" && (
+          <StockOutRequestStep 
+            onApprove={() => setCurrentStep("zone-selection")}
+            onReject={() => {}}
+          />
+        )}
         {currentStep === "zone-selection" && <StockOutZoneSelectionStep />}
         {currentStep === "picking" && <StockOutPickingStep />}
         {currentStep === "completion" && <StockOutCompletionStep />}
