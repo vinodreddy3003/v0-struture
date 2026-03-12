@@ -576,6 +576,21 @@ export function WarehouseCanvas() {
               <Package size={14} />
               Stock In
             </button>
+            <button
+              onClick={() => handleModeSwitch("stock-out")}
+              disabled={!warehouseExists}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                mode === "stock-out"
+                  ? "bg-amber-600 text-white"
+                  : warehouseExists
+                    ? "text-muted-foreground hover:bg-muted"
+                    : "opacity-50 cursor-not-allowed text-muted-foreground"
+              }`}
+              title={warehouseExists ? "Stock Out Mode - Manage stock depletion" : "Create warehouse first"}
+            >
+              <Package size={14} />
+              Stock Out
+            </button>
           </div>
         </div>
 
