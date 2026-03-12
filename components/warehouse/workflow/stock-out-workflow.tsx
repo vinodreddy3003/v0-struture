@@ -103,7 +103,7 @@ export function StockOutWorkflow({
         {currentStep === "product-selection" && <ProductSelectionStep nodes={nodes} />}
         {currentStep === "picking" && <PickingStep nodes={nodes} />}
         {currentStep === "completion" && (
-          <StockOutCompletionStep onWorkflowComplete={handleWorkflowComplete} />
+          <StockOutCompletionStep nodes={nodes} onWorkflowComplete={handleWorkflowComplete} />
         )}
       </div>
     </div>

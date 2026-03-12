@@ -2,12 +2,16 @@
 
 import { useStockOutStore } from "@/store/stock-out-store";
 import { CheckCircle2, ArrowRight, Package } from "lucide-react";
+import type { Node } from "@xyflow/react";
+import type { StructureData, Partition } from "@/components/warehouse/types";
 
 interface StockOutCompletionStepProps {
+  nodes?: Node[];
   onWorkflowComplete?: () => void;
 }
 
 export function StockOutCompletionStep({
+  nodes = [],
   onWorkflowComplete,
 }: StockOutCompletionStepProps) {
   const { currentRequestId, requests, pickingDetails, resetWorkflow, completeWorkflow } = useStockOutStore();
@@ -16,15 +20,39 @@ export function StockOutCompletionStep({
   if (!currentRequest) return null;
 
   const handleDispatchWarehouseUpdates = () => {
-    // Dispatch partition updates to warehouse canvas
+    // Dispatch partition updates to warehouse canvas with proper partition data
     pickingDetails.forEach((picking) => {
+      // Find the structure and partition data
+      const structure = nodes.find((n) => n.id === picking.structureId) as Node<StructureData> | undefined;
+      if (!structure) {
+        console.warn(`[v0] Structure ${picking.structureId} not found`);
+        return;
+      }
+
+      const level = structure.data.levels?.find((l) => l.id === picking.levelId);
+      if (!level) {
+        console.warn(`[v0] Level ${picking.levelId} not found in structure ${picking.structureId}`);
+        return;
+      }
+
+      const partition = level.partitions?.find((p) => p.id === picking.partitionId);
+      if (!partition) {
+        console.warn(`[v0] Partition ${picking.partitionId} not found`);
+        return;
+      }
+
+      // Create updated partition with reduced used_capacity
+      const updatedPartition: Partition = {
+        ...partition,
+        used_capacity: Math.max(0, (partition.used_capacity || 0) - picking.pickedQuantity),
+      };
+
+      // Dispatch partition-updated event with complete partition data
       const event = new CustomEvent("partition-updated", {
         detail: {
           structureId: picking.structureId,
           levelId: picking.levelId,
-          partitionId: picking.partitionId,
-          pickedQuantity: picking.pickedQuantity,
-          operation: "deduct", // Indicate this is a deduction (stock out)
+          partition: updatedPartition,
         },
       });
       window.dispatchEvent(event);

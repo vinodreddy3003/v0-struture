@@ -77,23 +77,6 @@ export function PickingStep({ nodes }: PickingStepProps) {
         pickedQuantity: qty,
       });
 
-      // Dispatch event to update warehouse visualization with full partition data
-      if (partition && partition.id) {
-        const updatedPartition = {
-          ...partition,
-          used_capacity: Math.max(0, (partition.used_capacity as number || 0) - qty),
-        };
-        
-        const event = new CustomEvent("partition-updated", {
-          detail: {
-            structureId,
-            levelId,
-            partition: updatedPartition,
-          },
-        });
-        window.dispatchEvent(event);
-      }
-
       setQuantityToPick("");
       setSelectedPartitionId("");
       setPickedLocations(new Set([...pickedLocations, partitionId]));
