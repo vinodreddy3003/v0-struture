@@ -444,16 +444,22 @@ export function WarehouseCanvas() {
       const customEvent = event as CustomEvent;
       const { structureId, levelId, partition } = customEvent.detail;
       
+      // Safety check: ensure partition has required data
+      if (!partition || !partition.id || !structureId || !levelId) {
+        console.warn("[v0] Invalid partition update event data", { structureId, levelId, partition });
+        return;
+      }
+      
       setNodes((prevNodes) =>
         prevNodes.map((node) => {
           if (node.id === structureId && node.type === "structure") {
             const data = { ...node.data };
-            const levelIndex = data.levels.findIndex((l) => l.id === levelId);
-            if (levelIndex !== -1) {
+            const levelIndex = data.levels?.findIndex((l: { id: string }) => l.id === levelId);
+            if (levelIndex !== undefined && levelIndex !== -1) {
               const updatedLevel = { ...data.levels[levelIndex] };
-              const partitionIndex = updatedLevel.partitions.findIndex(
-                (p) => p.id === partition.id
-              );
+              const partitionIndex = updatedLevel.partitions?.findIndex(
+                (p: { id?: string }) => p?.id === partition.id
+              ) ?? -1;
               if (partitionIndex !== -1) {
                 updatedLevel.partitions[partitionIndex] = partition;
                 const updatedLevels = [...data.levels];
@@ -461,21 +467,21 @@ export function WarehouseCanvas() {
 
                 // Recalculate structure capacity
                 const totalCapacity = updatedLevels.reduce(
-                  (sum, level) =>
+                  (sum: number, level: { partitions?: { max_capacity?: number }[] }) =>
                     sum +
-                    level.partitions.reduce(
-                      (partSum, part) => partSum + part.max_capacity,
+                    (level.partitions?.reduce(
+                      (partSum: number, part: { max_capacity?: number }) => partSum + (part?.max_capacity ?? 0),
                       0
-                    ),
+                    ) ?? 0),
                   0
                 );
                 const usedCapacity = updatedLevels.reduce(
-                  (sum, level) =>
+                  (sum: number, level: { partitions?: { used_capacity?: number }[] }) =>
                     sum +
-                    level.partitions.reduce(
-                      (partSum, part) => partSum + part.used_capacity,
+                    (level.partitions?.reduce(
+                      (partSum: number, part: { used_capacity?: number }) => partSum + (part?.used_capacity ?? 0),
                       0
-                    ),
+                    ) ?? 0),
                   0
                 );
 

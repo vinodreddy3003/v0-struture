@@ -2,7 +2,7 @@
 
 import { useStockOutStore } from "@/store/stock-out-store";
 import type { Node } from "@xyflow/react";
-import type { StructureData } from "@/components/warehouse/types";
+import type { StructureData, Partition } from "@/components/warehouse/types";
 import { ChevronDown, ChevronRight, Trash2, Package } from "lucide-react";
 import { useState } from "react";
 
@@ -59,7 +59,8 @@ export function PickingStep({ nodes }: PickingStepProps) {
     levelId: string,
     partitionId: string,
     partitionName: string,
-    availableQuantity: number
+    availableQuantity: number,
+    partition?: Partition
   ) => {
     const qty = Math.min(
       parseInt(quantityToPick) || 0,
@@ -76,16 +77,22 @@ export function PickingStep({ nodes }: PickingStepProps) {
         pickedQuantity: qty,
       });
 
-      // Dispatch event to update warehouse visualization
-      const event = new CustomEvent("partition-picked", {
-        detail: {
-          structureId,
-          levelId,
-          partitionId,
-          pickedQuantity: qty,
-        },
-      });
-      window.dispatchEvent(event);
+      // Dispatch event to update warehouse visualization with full partition data
+      if (partition && partition.id) {
+        const updatedPartition = {
+          ...partition,
+          used_capacity: Math.max(0, (partition.used_capacity as number || 0) - qty),
+        };
+        
+        const event = new CustomEvent("partition-updated", {
+          detail: {
+            structureId,
+            levelId,
+            partition: updatedPartition,
+          },
+        });
+        window.dispatchEvent(event);
+      }
 
       setQuantityToPick("");
       setSelectedPartitionId("");
@@ -232,7 +239,8 @@ export function PickingStep({ nodes }: PickingStepProps) {
                       level.id,
                       partition.id,
                       partition.name,
-                      partition.used_capacity
+                      partition.used_capacity,
+                      partition
                     );
                   }
                 }
