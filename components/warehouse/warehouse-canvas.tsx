@@ -444,15 +444,23 @@ export function WarehouseCanvas() {
       const customEvent = event as CustomEvent;
       const { structureId, levelId, partition } = customEvent.detail;
       
+      console.log("[v0] handlePartitionUpdate received:", {
+        structureId,
+        levelId,
+        partition,
+      });
+      
       // Safety check: ensure partition has required data
       if (!partition || !partition.id || !structureId || !levelId) {
         console.warn("[v0] Invalid partition update event data", { structureId, levelId, partition });
         return;
       }
       
-      setNodes((prevNodes) =>
-        prevNodes.map((node) => {
+      setNodes((prevNodes) => {
+        console.log("[v0] Updating nodes - before:", prevNodes.length);
+        return prevNodes.map((node) => {
           if (node.id === structureId && node.type === "structure") {
+            console.log("[v0] Found structure node, updating partition");
             const data = { ...node.data };
             const levelIndex = data.levels?.findIndex((l: { id: string }) => l.id === levelId);
             if (levelIndex !== undefined && levelIndex !== -1) {
@@ -461,6 +469,7 @@ export function WarehouseCanvas() {
                 (p: { id?: string }) => p?.id === partition.id
               ) ?? -1;
               if (partitionIndex !== -1) {
+                console.log("[v0] Found partition at index:", partitionIndex, "updating with:", partition);
                 updatedLevel.partitions[partitionIndex] = partition;
                 const updatedLevels = [...data.levels];
                 updatedLevels[levelIndex] = updatedLevel;
@@ -485,6 +494,8 @@ export function WarehouseCanvas() {
                   0
                 );
 
+                console.log("[v0] Updated structure capacity - total:", totalCapacity, "used:", usedCapacity);
+
                 return {
                   ...node,
                   data: {
@@ -498,8 +509,8 @@ export function WarehouseCanvas() {
             }
           }
           return node;
-        })
-      );
+        });
+      });
     };
 
     window.addEventListener("partition-selected", handlePartitionSelected);

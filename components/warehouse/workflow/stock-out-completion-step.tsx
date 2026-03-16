@@ -41,11 +41,46 @@ export function StockOutCompletionStep({
         return;
       }
 
-      // Create updated partition with reduced used_capacity
+      // Create updated partition with reduced used_capacity, preserving all fields
       const updatedPartition: Partition = {
         ...partition,
         used_capacity: Math.max(0, (partition.used_capacity || 0) - picking.pickedQuantity),
       };
+
+      console.log("[v0] Dispatching partition-updated event:", {
+        structureId: picking.structureId,
+        levelId: picking.levelId,
+        oldCapacity: partition.used_capacity,
+        pickedQuantity: picking.pickedQuantity,
+        newCapacity: updatedPartition.used_capacity,
+        partition: updatedPartition,
+      });
+
+      // Dispatch partition-updated event with complete partition data
+      const event = new CustomEvent("partition-updated", {
+        detail: {
+          structureId: picking.structureId,
+          levelId: picking.levelId,
+          partition: updatedPartition,
+        },
+      });
+      window.dispatchEvent(event);
+      console.log("[v0] Event dispatched for partition:", picking.partitionId);
+    });
+
+    console.log("[v0] All partition updates dispatched, calling completeWorkflow");
+    completeWorkflow();
+    onWorkflowComplete?.();
+  };
+
+      console.log("[v0] Dispatching partition-updated event:", {
+        structureId: picking.structureId,
+        levelId: picking.levelId,
+        oldCapacity: partition.used_capacity,
+        pickedQuantity: picking.pickedQuantity,
+        newCapacity: updatedPartition.used_capacity,
+        partition: updatedPartition,
+      });
 
       // Dispatch partition-updated event with complete partition data
       const event = new CustomEvent("partition-updated", {

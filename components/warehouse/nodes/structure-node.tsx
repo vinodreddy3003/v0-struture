@@ -191,4 +191,12 @@ function StructureNodeComponent({ id, data, selected }: StructureNodeProps) {
   );
 }
 
-export const StructureNode = memo(StructureNodeComponent);
+export const StructureNode = memo(StructureNodeComponent, (prevProps, nextProps) => {
+  // Custom comparison: return true if props are same (SKIP re-render), false to trigger re-render
+  const levelsChanged = JSON.stringify(prevProps.data.levels) !== JSON.stringify(nextProps.data.levels);
+  const selectedChanged = prevProps.selected !== nextProps.selected;
+  const idChanged = prevProps.id !== nextProps.id;
+  
+  // If any of these changed, re-render (return false)
+  return !levelsChanged && !selectedChanged && !idChanged;
+});
