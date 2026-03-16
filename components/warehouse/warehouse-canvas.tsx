@@ -14,7 +14,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { nanoid } from "nanoid";
-import { Menu, X, Package } from "lucide-react";
+import { Menu, X, Package, ArrowRightLeft } from "lucide-react";
 
 import { WarehouseNode } from "./nodes/warehouse-node";
 import { ElementNode } from "./nodes/element-node";
@@ -596,6 +596,21 @@ export function WarehouseCanvas() {
             >
               <Package size={14} />
               Stock Out
+            </button>
+            <button
+              onClick={() => handleModeSwitch("stock-transfer")}
+              disabled={!warehouseExists}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                mode === "stock-transfer"
+                  ? "bg-indigo-600 text-white"
+                  : warehouseExists
+                    ? "text-muted-foreground hover:bg-muted"
+                    : "opacity-50 cursor-not-allowed text-muted-foreground"
+              }`}
+              title={warehouseExists ? "Stock Transfer Mode - Move stock between locations" : "Create warehouse first"}
+            >
+              <ArrowRightLeft size={14} />
+              Transfer
             </button>
           </div>
         </div>

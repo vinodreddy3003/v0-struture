@@ -12,6 +12,7 @@ import {
   Upload,
   Layers,
   Package,
+  ArrowRightLeft,
 } from "lucide-react";
 import { useState } from "react";
 import { WarehouseForm } from "./forms/warehouse-form";
@@ -22,6 +23,7 @@ import { NodeEditForm } from "./forms/node-edit-form";
 import { StockInForm } from "./forms/stock-in-form";
 import { StockInWorkflow } from "./workflow/stock-in-workflow";
 import { StockOutWorkflow } from "./workflow/stock-out-workflow";
+import { StockTransferWorkflow } from "./workflow/stock-transfer-workflow";
 import type {
   WarehouseData,
   ElementData,
@@ -36,7 +38,7 @@ type SidebarSection = "elements" | "zones" | "structures" | "settings" | null;
 
 interface SidePanelProps {
   isOpen: boolean;
-  mode: "design" | "stock-in" | "stock-out";
+  mode: "design" | "stock-in" | "stock-out" | "stock-transfer";
   warehouseExists: boolean;
   warehouseData: WarehouseData | null;
   selectedNode: Node | null;
@@ -133,11 +135,15 @@ export function SidePanel({
       <div className="flex items-center gap-2 border-b border-border px-4 py-3">
         {mode === "stock-in" ? (
           <Package size={18} className="text-emerald-600" />
+        ) : mode === "stock-out" ? (
+          <Package size={18} className="text-amber-600" />
+        ) : mode === "stock-transfer" ? (
+          <ArrowRightLeft size={18} className="text-indigo-600" />
         ) : (
           <Warehouse size={18} className="text-primary" />
         )}
         <h2 className="text-sm font-bold text-card-foreground">
-          {mode === "stock-in" ? "Stock In" : mode === "stock-out" ? "Stock Out" : "Layout Designer"}
+          {mode === "stock-in" ? "Stock In" : mode === "stock-out" ? "Stock Out" : mode === "stock-transfer" ? "Stock Transfer" : "Layout Designer"}
         </h2>
       </div>
 
@@ -541,6 +547,20 @@ export function SidePanel({
         {mode === "stock-out" && (
           <div className="p-4">
             <StockOutWorkflow 
+              nodes={nodes || []}
+              onAddRequest={() => {}}
+              onWorkflowComplete={(callback) => {
+                // Called when workflow completes to update partitions
+                // The callback will be used to update warehouse canvas
+              }}
+            />
+          </div>
+        )}
+
+        {/* STOCK TRANSFER MODE */}
+        {mode === "stock-transfer" && (
+          <div className="p-4">
+            <StockTransferWorkflow 
               nodes={nodes || []}
               onAddRequest={() => {}}
               onWorkflowComplete={(callback) => {

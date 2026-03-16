@@ -162,3 +162,30 @@ export interface StockOutRequest {
   pickingDetails: PickingDetail[];
   notes?: string;
 }
+
+// Stock Transfer Workflow Types
+export type StockTransferRequestStatus = "pending" | "approved" | "rejected" | "in-progress" | "completed";
+export type TransferType = "internal" | "external";
+
+export interface TransferDetail {
+  sourceStructureId: string;
+  sourceLevelId: string;
+  sourcePartitionId: string;
+  destStructureId: string;
+  destLevelId: string;
+  transferredQuantity: number;
+}
+
+export interface StockTransferRequest {
+  id: string;
+  date: string;
+  productName: string;
+  transferType: TransferType;
+  quantity: number;
+  sourceLocation?: string;
+  destLocation?: string;
+  reason?: string;
+  status: StockTransferRequestStatus;
+  transfers: TransferDetail[];
+  notes?: string;
+}
