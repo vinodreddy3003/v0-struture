@@ -100,14 +100,14 @@ export function AuditLogsHeader({
         {/* Filter Row */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
           {/* Action Filter */}
-          <Select value={filters.action} onValueChange={(value) => {
-            onFilterChange({ ...filters, action: value });
+          <Select value={filters.action || "all-actions"} onValueChange={(value) => {
+            onFilterChange({ ...filters, action: value === "all-actions" ? "" : value });
           }}>
             <SelectTrigger className="text-xs">
               <SelectValue placeholder="Action" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Actions</SelectItem>
+              <SelectItem value="all-actions">All Actions</SelectItem>
               <SelectItem value="STOCK_IN_ALLOCATED">Stock In</SelectItem>
               <SelectItem value="STOCK_OUT_PICKED">Stock Out</SelectItem>
               <SelectItem value="TRANSFER_COMPLETED">Transfer</SelectItem>
@@ -115,14 +115,14 @@ export function AuditLogsHeader({
           </Select>
 
           {/* Module Filter */}
-          <Select value={filters.module} onValueChange={(value) => {
-            onFilterChange({ ...filters, module: value });
+          <Select value={filters.module || "all-modules"} onValueChange={(value) => {
+            onFilterChange({ ...filters, module: value === "all-modules" ? "" : value });
           }}>
             <SelectTrigger className="text-xs">
               <SelectValue placeholder="Module" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Modules</SelectItem>
+              <SelectItem value="all-modules">All Modules</SelectItem>
               <SelectItem value="Request">Request</SelectItem>
               <SelectItem value="Allocation">Allocation</SelectItem>
               <SelectItem value="Picking">Picking</SelectItem>
@@ -131,14 +131,14 @@ export function AuditLogsHeader({
           </Select>
 
           {/* Status Filter */}
-          <Select value={filters.status} onValueChange={(value) => {
-            onFilterChange({ ...filters, status: value });
+          <Select value={filters.status || "all-status"} onValueChange={(value) => {
+            onFilterChange({ ...filters, status: value === "all-status" ? "" : value });
           }}>
             <SelectTrigger className="text-xs">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Status</SelectItem>
+              <SelectItem value="all-status">All Status</SelectItem>
               <SelectItem value="Success">Success</SelectItem>
               <SelectItem value="Failed">Failed</SelectItem>
               <SelectItem value="Pending">Pending</SelectItem>
