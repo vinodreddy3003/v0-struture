@@ -27,7 +27,7 @@ export function AuditLogRow({ log }: AuditLogRowProps) {
     <>
       <tr
         onClick={() => setIsExpanded(!isExpanded)}
-        className="hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer transition-colors border-b border-slate-200 dark:border-slate-700"
+        className="hover:bg-gray-50 cursor-pointer transition-colors border-b border-gray-200"
       >
         <td className="px-4 py-3">
           <button
@@ -35,41 +35,51 @@ export function AuditLogRow({ log }: AuditLogRowProps) {
               e.stopPropagation();
               setIsExpanded(!isExpanded);
             }}
-            className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
+            className="p-1 hover:bg-gray-200 rounded transition-colors"
             aria-label="Toggle details"
           >
             <ChevronDown
               size={18}
-              className={`transform transition-transform ${isExpanded ? 'rotate-180' : ''} text-slate-600 dark:text-slate-400`}
+              className={`transform transition-transform ${isExpanded ? 'rotate-180' : ''} text-gray-600`}
             />
           </button>
         </td>
         <td className="px-4 py-3">
-          <AuditLogBadge type={log.type} status={log.status} />
-        </td>
-        <td className="px-4 py-3">
-          <span className="font-medium text-slate-900 dark:text-slate-100">{log.productName}</span>
+          <span className="font-medium text-gray-900">{log.productName}</span>
         </td>
         <td className="px-4 py-3 hidden md:table-cell">
-          <span className={`text-base font-semibold ${log.sign === '+' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+          <span className={`text-base font-semibold ${log.sign === '+' ? 'text-green-600' : 'text-red-600'}`}>
             {log.sign}{log.quantity}
           </span>
         </td>
         <td className="px-4 py-3 hidden lg:table-cell">
-          <span className="text-sm text-slate-600 dark:text-slate-400">{log.sourceLocation || '—'}</span>
+          <span className="text-sm text-gray-600">{log.sourceLocation || '—'}</span>
         </td>
         <td className="px-4 py-3 hidden lg:table-cell">
-          <span className="text-sm text-slate-600 dark:text-slate-400">{log.destinationLocation || '—'}</span>
+          <span className="text-sm text-gray-600">{log.destinationLocation || '—'}</span>
         </td>
         <td className="px-4 py-3 hidden sm:table-cell">
-          <span className="text-sm text-slate-600 dark:text-slate-400">{log.user}</span>
+          <span className="text-sm text-gray-600">{log.user}</span>
         </td>
-        <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
+        <td className="px-4 py-3 text-sm text-gray-600">
           {formatDate(log.timestamp)}
+        </td>
+        <td className="px-4 py-3">
+          <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+            log.status === 'completed'
+              ? 'bg-green-100 text-green-700'
+              : log.status === 'failed'
+                ? 'bg-red-100 text-red-700'
+                : log.status === 'picked'
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'bg-yellow-100 text-yellow-700'
+          }`}>
+            {log.status.charAt(0).toUpperCase() + log.status.slice(1)}
+          </span>
         </td>
       </tr>
       {isExpanded && (
-        <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+        <tr className="bg-gray-50 border-b border-gray-200">
           <td colSpan={8} className="p-0">
             <AuditLogDetails log={log} />
           </td>

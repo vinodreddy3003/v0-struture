@@ -17,6 +17,9 @@ const ZONES = ['Raw Materials', 'Finished Goods', 'Cold Storage', 'Packing Area'
 const SECTIONS = ['Section A', 'Section B', 'Section C', 'Section D'];
 const SHELVES = ['Shelf 1', 'Shelf 2', 'Shelf 3', 'Shelf 4', 'Shelf 5'];
 
+// Fixed base date for deterministic timestamp generation (March 19, 2024)
+const BASE_DATE_MS = 1710806400000;
+
 // Seeded random number generator for deterministic output
 function seededRandom(seed: number): number {
   const x = Math.sin(seed) * 10000;
@@ -28,10 +31,10 @@ function getRandomElement<T>(array: T[], seed: number): T {
   return array[index];
 }
 
-function generateRandomDate(daysAgo: number = 30, seed: number): Date {
-  const now = new Date();
-  const pastDate = new Date(now.getTime() - seededRandom(seed) * daysAgo * 24 * 60 * 60 * 1000);
-  return pastDate;
+function generateRandomDate(daysAgo: number = 2, seed: number): Date {
+  // Use fixed base timestamp to ensure consistency between server and client
+  const randomOffset = seededRandom(seed) * daysAgo * 24 * 60 * 60 * 1000;
+  return new Date(BASE_DATE_MS - randomOffset);
 }
 
 export function generateMockAuditLogs(count: number = 50): AuditLog[] {
