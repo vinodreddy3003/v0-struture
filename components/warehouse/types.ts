@@ -189,3 +189,28 @@ export interface StockTransferRequest {
   transfers: TransferDetail[];
   notes?: string;
 }
+
+// Audit Log Types
+export type AuditLogType = "stock-in" | "stock-out" | "stock-transfer";
+export type AuditLogStatus = "pending" | "picked" | "completed" | "failed";
+
+export interface AuditLog {
+  id: string;
+  type: AuditLogType;
+  productName: string;
+  quantity: number;
+  sign: "+" | "-";
+  sourceLocation?: string;
+  destinationLocation?: string;
+  user: string;
+  timestamp: Date;
+  status: AuditLogStatus;
+  referenceId: string;
+  zone?: string;
+  section?: string;
+  shelf?: string;
+  beforeQuantity?: number;
+  afterQuantity?: number;
+  actionDescription?: string;
+  requestId?: string;
+}

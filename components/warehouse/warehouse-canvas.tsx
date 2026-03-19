@@ -14,7 +14,8 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { nanoid } from "nanoid";
-import { Menu, X, Package, ArrowRightLeft } from "lucide-react";
+import { Menu, X, Package, ArrowRightLeft, FileText } from "lucide-react";
+import Link from "next/link";
 
 import { WarehouseNode } from "./nodes/warehouse-node";
 import { ElementNode } from "./nodes/element-node";
@@ -623,6 +624,14 @@ export function WarehouseCanvas() {
               <ArrowRightLeft size={14} />
               Transfer
             </button>
+            <Link
+              href="/audit-logs"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors text-muted-foreground hover:bg-muted"
+              title="View audit logs"
+            >
+              <FileText size={14} />
+              Audit Logs
+            </Link>
           </div>
         </div>
 
