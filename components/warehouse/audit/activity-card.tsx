@@ -77,7 +77,7 @@ export function ActivityCard({ log }: ActivityCardProps) {
   const relativeTime = formatRelativeTime(log.timestamp);
 
   return (
-    <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 hover:shadow-sm transition-all duration-200 cursor-default">
+    <div className="flex items-center gap-4 p-4 bg-white border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all duration-150 cursor-default">
       {/* Circular Icon */}
       <div className={`flex-shrink-0 w-10 h-10 rounded-full ${iconBgColor} flex items-center justify-center`}>
         {getActivityIcon(log.type)}
@@ -85,13 +85,14 @@ export function ActivityCard({ log }: ActivityCardProps) {
 
       {/* Product Details */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-baseline gap-2">
+        <div className="flex items-baseline gap-1">
           <p className="font-semibold text-gray-900">{log.productName}</p>
+          <span className="text-gray-400">•</span>
           <p className="text-sm text-gray-600">
-            {log.sign}{log.quantity} {log.quantity === 1 ? 'unit' : 'units'}
+            {Math.abs(log.quantity)} {log.quantity === 1 ? 'liter' : 'liters'}
           </p>
         </div>
-        <div className="flex items-center gap-2 mt-1">
+        <div className="flex items-center gap-1.5 mt-1">
           <p className="text-sm text-gray-600">by {log.user}</p>
           <span className="text-gray-300">•</span>
           <p className="text-sm text-gray-600">{relativeTime}</p>

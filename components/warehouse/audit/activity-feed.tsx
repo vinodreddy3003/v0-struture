@@ -17,7 +17,7 @@ export function ActivityFeed({ logs }: ActivityFeedProps) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {logs.map((log) => (
         <ActivityCard key={log.id} log={log} />
       ))}
